@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Тесты
+        run: dotnet test --project tests/RobloxAntiAfk.Core.Tests
+
+      - name: Сборка exe
+        run: >
+          dotnet publish src/RobloxAntiAfk.App -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -o dist
+
+      # Roblox здесь нет, поэтому приложение только открывается и ждёт игру, ничего не нажимая.
+      - name: Проверка запуска
+        shell: pwsh
+        run: |
+          $app = Start-Process -FilePath "dist\RobloxAntiAFK.exe" -PassThru
+          Start-Sleep -Seconds 20
+          if ($app.HasExited) {
+            Write-Error "Приложение закрылось само, код выхода: $($app.ExitCode)"
+            exit 1
+          }
+          $app.Refresh()
+          Write-Host "Приложение работает, заголовок окна: '$($app.MainWindowTitle)'"
+          Stop-Process -Id $app.Id -Force
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: roblox-antiafk-windows
+          path: dist/RobloxAntiAFK.exe
+
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Тесты
+        run: dotnet test --project tests/RobloxAntiAfk.Core.Tests
+
+      - name: Сборка приложения
+        run: dotnet publish src/RobloxAntiAfk.App -c Release -r osx-arm64 --self-contained -o dist

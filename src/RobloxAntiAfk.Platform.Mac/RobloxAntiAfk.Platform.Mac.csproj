@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RobloxAntiAfk.Core\RobloxAntiAfk.Core.csproj" />
+    <InternalsVisibleTo Include="RobloxAntiAfk.Core.Tests" />
+  </ItemGroup>
+</Project>

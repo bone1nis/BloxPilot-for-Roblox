@@ -1,0 +1,219 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <SolidColorBrush x:Key="BackgroundBrush">#12141C</SolidColorBrush>
+    <SolidColorBrush x:Key="PanelBrush">#1A1D28</SolidColorBrush>
+    <SolidColorBrush x:Key="RaisedBrush">#222633</SolidColorBrush>
+    <SolidColorBrush x:Key="LineBrush">#2D3241</SolidColorBrush>
+    <SolidColorBrush x:Key="TextBrush">#F2F3F7</SolidColorBrush>
+    <SolidColorBrush x:Key="MutedBrush">#A0A6B8</SolidColorBrush>
+    <SolidColorBrush x:Key="AccentBrush">#7EE787</SolidColorBrush>
+    <SolidColorBrush x:Key="AccentInkBrush">#0D2412</SolidColorBrush>
+    <SolidColorBrush x:Key="PausedBrush">#F5C451</SolidColorBrush>
+    <SolidColorBrush x:Key="WaitingBrush">#79B8FF</SolidColorBrush>
+    <SolidColorBrush x:Key="ProblemBrush">#FF8080</SolidColorBrush>
+    <SolidColorBrush x:Key="WarningBackgroundBrush">#231F14</SolidColorBrush>
+    <SolidColorBrush x:Key="WarningLineBrush">#5A4A22</SolidColorBrush>
+    <SolidColorBrush x:Key="SliderThumbBackground">#7EE787</SolidColorBrush>
+    <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver">#7EE787</SolidColorBrush>
+    <SolidColorBrush x:Key="SliderThumbBackgroundPressed">#7EE787</SolidColorBrush>
+    <SolidColorBrush x:Key="SliderTrackValueFill">#7EE787</SolidColorBrush>
+    <SolidColorBrush x:Key="SliderTrackValueFillPointerOver">#7EE787</SolidColorBrush>
+    <SolidColorBrush x:Key="SliderTrackValueFillPressed">#7EE787</SolidColorBrush>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+
+  <!-- Текст -->
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+  </Style>
+  <Style Selector="TextBlock.small">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="LineHeight" Value="18" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.strong">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.warning">
+    <Setter Property="Foreground" Value="{StaticResource PausedBrush}" />
+  </Style>
+  <Style Selector="TextBlock.sectionTitle">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="0.7" />
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    <Setter Property="Margin" Value="0,0,0,8" />
+  </Style>
+  <Style Selector="TextBlock.bigNumber">
+    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- Карточки -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="14,11" />
+  </Style>
+  <Style Selector="Border.card.warning">
+    <Setter Property="Background" Value="{StaticResource WarningBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource WarningLineBrush}" />
+  </Style>
+  <Style Selector="Border.stat">
+    <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="12,8" />
+  </Style>
+
+  <!-- Кнопки -->
+  <Style Selector="Button">
+    <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </Style>
+  <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </Style>
+  <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    <Setter Property="Opacity" Value="0.55" />
+  </Style>
+
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource AccentInkBrush}" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource AccentInkBrush}" />
+    <Setter Property="Opacity" Value="0.88" />
+  </Style>
+
+  <!-- Варианты выбора -->
+  <Style Selector="Button.chip">
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector="Button.chip.active">
+    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource AccentInkBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.chip.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource AccentInkBrush}" />
+  </Style>
+
+  <!-- Вкладки -->
+  <Style Selector="Border.tabs">
+    <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="11" />
+    <Setter Property="Padding" Value="3" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+  <Style Selector="Button.tab">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="14,6" />
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+  </Style>
+  <Style Selector="Button.tab.active">
+    <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </Style>
+
+  <!-- Состояние: цвет кольца и заголовка -->
+  <Style Selector="Arc.ring">
+    <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
+    <Setter Property="StrokeThickness" Value="10" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StartAngle" Value="-90" />
+  </Style>
+  <Style Selector="TextBlock.stateTitle">
+    <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    <Setter Property="FontSize" Value="17" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.paused Arc.ring">
+    <Setter Property="Stroke" Value="{StaticResource PausedBrush}" />
+  </Style>
+  <Style Selector="Border.paused TextBlock.stateTitle">
+    <Setter Property="Foreground" Value="{StaticResource PausedBrush}" />
+  </Style>
+  <Style Selector="Border.waiting Arc.ring">
+    <Setter Property="Stroke" Value="{StaticResource WaitingBrush}" />
+  </Style>
+  <Style Selector="Border.waiting TextBlock.stateTitle">
+    <Setter Property="Foreground" Value="{StaticResource WaitingBrush}" />
+  </Style>
+  <Style Selector="Border.problem Arc.ring">
+    <Setter Property="Stroke" Value="{StaticResource ProblemBrush}" />
+  </Style>
+  <Style Selector="Border.problem TextBlock.stateTitle">
+    <Setter Property="Foreground" Value="{StaticResource ProblemBrush}" />
+  </Style>
+
+  <!-- Журнал -->
+  <Style Selector="Ellipse.dot">
+    <Setter Property="Width" Value="7" />
+    <Setter Property="Height" Value="7" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Fill" Value="{StaticResource MutedBrush}" />
+  </Style>
+  <Style Selector="Ellipse.dot.success">
+    <Setter Property="Fill" Value="{StaticResource AccentBrush}" />
+  </Style>
+  <Style Selector="Ellipse.dot.skipped">
+    <Setter Property="Fill" Value="{StaticResource WaitingBrush}" />
+  </Style>
+  <Style Selector="Ellipse.dot.error">
+    <Setter Property="Fill" Value="{StaticResource ProblemBrush}" />
+  </Style>
+
+  <!-- Элементы настроек -->
+  <Style Selector="Slider">
+    <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+  </Style>
+  <Style Selector="ToggleSwitch">
+    <Setter Property="OnContent" Value="" />
+    <Setter Property="OffContent" Value="" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
+    <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Ellipse#SwitchKnobOn">
+    <Setter Property="Fill" Value="{StaticResource AccentInkBrush}" />
+  </Style>
+</Styles>

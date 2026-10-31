@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
+             x:Class="RobloxAntiAfk.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <UserControl.Resources>
+    <ItemsPanelTemplate x:Key="WrapChoices">
+      <WrapPanel />
+    </ItemsPanelTemplate>
+    <DataTemplate x:Key="ChoiceTemplate" x:DataType="vm:ChoiceViewModel">
+      <Button Classes="chip" Classes.active="{Binding IsSelected}" Content="{Binding Label}" Command="{Binding Select}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <StackPanel Spacing="8">
+    <Border Classes="card">
+      <StackPanel Spacing="4">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Classes="strong" Text="Как часто" />
+          <TextBlock Grid.Column="1" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" Text="{Binding IntervalText}" />
+        </Grid>
+        <Slider Minimum="1" Maximum="19" TickFrequency="1" IsSnapToTickEnabled="True"
+                Value="{Binding IntervalMinutes}" />
+        <TextBlock Classes="muted small" Classes.warning="{Binding IsIntervalTight}" Text="{Binding IntervalHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Что делать" />
+        <ItemsControl ItemsSource="{Binding Actions}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
+        <TextBlock Classes="muted small" Classes.warning="{Binding IsActionRisky}" Text="{Binding ActionHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding ShowTarget}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Куда кликать" />
+        <ItemsControl ItemsSource="{Binding Targets}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
+        <Button HorizontalAlignment="Left" Content="{Binding PointButtonText}"
+                IsVisible="{Binding ShowPointButton}" IsEnabled="{Binding CanUsePointButton}"
+                Command="{Binding PointButtonCommand}" />
+        <TextBlock Classes="muted small" Text="{Binding TargetHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding ShowKeys}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Какая клавиша" />
+        <ItemsControl ItemsSource="{Binding Keys}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
+        <TextBlock Classes="muted small" Text="{Binding KeyHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Все окна Roblox" />
+          <TextBlock Classes="muted small" Text="Если открыто несколько окон, действие будет в каждом по очереди" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding AllWindows}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Пропускать, когда идёт игра" />
+          <TextBlock Classes="muted small" Text="Ничего не делать, если Roblox открыт и в последнюю минуту был ввод" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding SkipWhilePlaying}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Не давать компьютеру уснуть" />
+          <TextBlock Classes="muted small" Text="Экран и компьютер не засыпают, пока приложение работает" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding KeepAwake}" />
+      </Grid>
+    </Border>
+
+    <Button HorizontalAlignment="Left" Margin="0,6,0,0" Content="Вернуть по умолчанию" Command="{Binding ResetToDefaultsCommand}" />
+  </StackPanel>
+</UserControl>

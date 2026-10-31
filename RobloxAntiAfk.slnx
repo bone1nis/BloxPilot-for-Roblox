@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RobloxAntiAfk.App/RobloxAntiAfk.App.csproj" />
+    <Project Path="src/RobloxAntiAfk.Core/RobloxAntiAfk.Core.csproj" />
+    <Project Path="src/RobloxAntiAfk.Platform.Mac/RobloxAntiAfk.Platform.Mac.csproj" />
+    <Project Path="src/RobloxAntiAfk.Platform.Windows/RobloxAntiAfk.Platform.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RobloxAntiAfk.App.Screenshots/RobloxAntiAfk.App.Screenshots.csproj" />
+    <Project Path="tests/RobloxAntiAfk.Core.Tests/RobloxAntiAfk.Core.Tests.csproj" />
+  </Folder>
+</Solution>

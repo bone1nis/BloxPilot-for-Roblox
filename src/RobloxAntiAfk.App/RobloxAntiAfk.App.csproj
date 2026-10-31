@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>RobloxAntiAFK</AssemblyName>
+    <RootNamespace>RobloxAntiAfk.App</RootNamespace>
+    <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RobloxAntiAfk.Core\RobloxAntiAfk.Core.csproj" />
+    <ProjectReference Include="..\RobloxAntiAfk.Platform.Windows\RobloxAntiAfk.Platform.Windows.csproj" />
+    <ProjectReference Include="..\RobloxAntiAfk.Platform.Mac\RobloxAntiAfk.Platform.Mac.csproj" />
+  </ItemGroup>
+</Project>

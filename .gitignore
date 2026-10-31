@@ -1,0 +1,11 @@
+bin/
+obj/
+dist/
+artifacts/
+legacy/
+TestResults/
+.vs/
+.idea/
+.vscode/
+*.user
+.DS_Store

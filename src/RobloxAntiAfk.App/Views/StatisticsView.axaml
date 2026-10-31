@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
+             x:Class="RobloxAntiAfk.App.Views.StatisticsView"
+             x:DataType="vm:StatisticsViewModel">
+  <StackPanel Spacing="12">
+    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto">
+      <Border Classes="card">
+        <StackPanel>
+          <TextBlock Classes="bigNumber" Text="{Binding CurrentSession}" />
+          <TextBlock Classes="muted small" Text="текущая сессия" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="2" Classes="card">
+        <StackPanel>
+          <TextBlock Classes="bigNumber" Text="{Binding LongestSession}" />
+          <TextBlock Classes="muted small" Text="самая долгая сессия" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Row="2" Classes="card">
+        <StackPanel>
+          <TextBlock Classes="bigNumber" Text="{Binding TotalTime}" />
+          <TextBlock Classes="muted small" Text="всего работало" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Row="2" Grid.Column="2" Classes="card">
+        <StackPanel>
+          <TextBlock Classes="bigNumber" Text="{Binding TotalActions}" />
+          <TextBlock Classes="muted small" Text="всего действий" />
+        </StackPanel>
+      </Border>
+    </Grid>
+    <TextBlock Classes="muted small"
+               Text="Считается время, пока Roblox запущен и приложение не на паузе. После паузы или закрытия Roblox начинается новая сессия. Статистика сохраняется между запусками." />
+    <Button HorizontalAlignment="Left" Content="Сбросить статистику" Command="{Binding ResetCommand}" />
+  </StackPanel>
+</UserControl>

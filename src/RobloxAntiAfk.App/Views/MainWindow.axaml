@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
+        xmlns:views="using:RobloxAntiAfk.App.Views"
+        x:Class="RobloxAntiAfk.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Roblox AntiAFK"
+        Icon="/Assets/icon.png"
+        Width="820" Height="620"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen">
+  <Grid ColumnDefinitions="340,*">
+    <views:StatusPanel Grid.Column="0" DataContext="{Binding Status}" x:Name="StatusArea" />
+
+    <Grid Grid.Column="1" RowDefinitions="Auto,*" x:Name="ContentArea" Margin="28,24,0,0">
+      <Border Grid.Row="0" Classes="tabs" Margin="0,0,0,16">
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="tab" Classes.active="{Binding IsRulesTab}"
+                  Content="Как это работает"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Rules}" />
+          <Button Classes="tab" Classes.active="{Binding IsSettingsTab}"
+                  Content="Настройки"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Settings}" />
+          <Button Classes="tab" Classes.active="{Binding IsStatisticsTab}"
+                  Content="Статистика"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Statistics}" />
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer Grid.Row="1" x:Name="Scroller" Padding="0,0,28,24">
+        <Panel>
+          <Panel IsVisible="{Binding IsRulesTab}">
+            <views:RulesView DataContext="{Binding Rules}" />
+          </Panel>
+          <Panel IsVisible="{Binding IsSettingsTab}">
+            <views:SettingsView DataContext="{Binding Settings}" />
+          </Panel>
+          <Panel IsVisible="{Binding IsStatisticsTab}">
+            <views:StatisticsView DataContext="{Binding Statistics}" />
+          </Panel>
+        </Panel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</Window>

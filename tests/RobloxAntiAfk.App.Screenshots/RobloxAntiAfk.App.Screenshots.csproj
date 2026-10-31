@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Avalonia.Skia" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RobloxAntiAfk.App\RobloxAntiAfk.App.csproj" />
+    <Compile Include="..\RobloxAntiAfk.Core.Tests\Fakes\FakePlatform.cs" Link="FakePlatform.cs" />
+  </ItemGroup>
+</Project>
