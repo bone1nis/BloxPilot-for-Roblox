@@ -6,6 +6,10 @@ namespace RobloxAntiAfk.Core.Services;
 /// <summary>Показывает подпись поверх игры. Реализация живёт в интерфейсе, здесь нужны только эти команды.</summary>
 public interface ITranslationOverlay
 {
+    /// <summary>Закрывает окно Roblox застывшим кадром с подсказкой.</summary>
+    void ShowFrozen(ScreenSnapshot snapshot, string prompt);
+
+    /// <summary>Рамка поверх застывшего кадра.</summary>
     void ShowSelection(ScreenRect area);
 
     /// <summary>Возвращает место, где оказалась подпись.</summary>
@@ -45,8 +49,8 @@ public sealed class ScreenTranslator
     private bool _isDragging;
     private bool _isDragUpdatePending;
     private DateTimeOffset _selectionDeadline;
-    private WindowHandle _selectionWindow;
     private ScreenRect _selectionBounds;
+    private ScreenSnapshot? _snapshot;
     private ScreenPoint _dragStart;
     private ScreenPoint _dragCurrent;
 
@@ -182,52 +186,10 @@ public sealed class ScreenTranslator
 
     public void BeginSelection()
     {
-        if (_isSelecting || _isBusy || !CanUseMouse())
+        if (!_isSelecting && !_isBusy && CanUseMouse())
         {
-            return;
+            _ = BeginSelectionAsync();
         }
-
-        Close();
-        if (!_platform.Permission.IsGranted)
-        {
-            _platform.Permission.Prompt();
-            Report(TranslationStatus.InputPermissionMissing);
-            return;
-        }
-
-        if (!_platform.TextReader.IsPermissionGranted)
-        {
-            _platform.TextReader.RequestPermission();
-            Report(TranslationStatus.ScreenPermissionMissing);
-            return;
-        }
-
-        var windows = _platform.Windows.FindRobloxWindows();
-        if (windows.Count == 0)
-        {
-            Report(TranslationStatus.RobloxMissing);
-            return;
-        }
-
-        if (!_platform.MouseCapture.StartDrag(OnSelectionDown, OnSelectionMove, OnSelectionUp))
-        {
-            Report(TranslationStatus.SelectionFailed);
-            return;
-        }
-
-        _isSelecting = true;
-        _isDragging = false;
-        _selectionDeadline = _clock.Now + SelectionTimeout;
-        _engine.PostponeNextAction(SelectionTimeout);
-        var foreground = _platform.Windows.GetForegroundWindow();
-        if (!windows.Contains(foreground))
-        {
-            foreground = windows[0];
-            BringForward(foreground);
-        }
-
-        ShowSelectionPrompt(foreground);
-        SetStatus(TranslationStatus.SelectingArea);
     }
 
     public void CancelSelection()
@@ -241,6 +203,7 @@ public sealed class ScreenTranslator
         _isDragging = false;
         _platform.MouseCapture.Stop();
         HideOverlay();
+        ReleaseSnapshot();
         SetStatus(IdleStatus(Settings));
     }
 
@@ -285,8 +248,119 @@ public sealed class ScreenTranslator
         }
 
         HideOverlay();
+        ReleaseSnapshot();
         _platform.Overlay.Release();
     }
+
+    /// <summary>
+    /// Кадр снимается до перехвата мыши: пока его нет, рисовать рамку не на чем.
+    /// Roblox должен быть впереди, иначе в кадр попадёт другая программа.
+    /// </summary>
+    private async Task BeginSelectionAsync()
+    {
+        var hadOverlay = _isOverlayVisible;
+        Close();
+        if (!_platform.Permission.IsGranted)
+        {
+            _platform.Permission.Prompt();
+            Report(TranslationStatus.InputPermissionMissing);
+            return;
+        }
+
+        if (!_platform.TextReader.IsPermissionGranted)
+        {
+            _platform.TextReader.RequestPermission();
+            Report(TranslationStatus.ScreenPermissionMissing);
+            return;
+        }
+
+        var windows = _platform.Windows.FindRobloxWindows();
+        if (windows.Count == 0)
+        {
+            Report(TranslationStatus.RobloxMissing);
+            return;
+        }
+
+        _isSelecting = true;
+        _isDragging = false;
+        _selectionDeadline = _clock.Now + SelectionTimeout;
+        _engine.PostponeNextAction(SelectionTimeout);
+        SetStatus(TranslationStatus.SelectingArea);
+
+        try
+        {
+            var foreground = _platform.Windows.GetForegroundWindow();
+            if (!windows.Contains(foreground))
+            {
+                foreground = windows[0];
+                BringForward(foreground);
+                await _clock.Delay(_platform.WindowSettleDelay);
+            }
+            else if (hadOverlay)
+            {
+                await _clock.Delay(OverlayHideDelay);
+            }
+
+            if (_platform.Windows.GetForegroundWindow() != foreground || _platform.Windows.GetBounds(foreground) is not { } bounds)
+            {
+                AbortSelection(TranslationStatus.RobloxNotInFront);
+                return;
+            }
+
+            var capture = await _platform.TextReader.CaptureAsync(bounds, CancellationToken.None);
+            if (!_isSelecting)
+            {
+                capture.Snapshot?.Dispose();
+                return;
+            }
+
+            if (capture.Status != TextReadStatus.Success || capture.Snapshot is null)
+            {
+                capture.Snapshot?.Dispose();
+                _detail = capture.Detail;
+                AbortSelection(ToStatus(capture.Status));
+                return;
+            }
+
+            _snapshot = capture.Snapshot;
+            _selectionBounds = bounds;
+            _overlay.ShowFrozen(_snapshot, SelectionPrompt);
+            _isOverlayVisible = true;
+            if (!_platform.MouseCapture.StartDrag(OnSelectionDown, OnSelectionMove, OnSelectionUp))
+            {
+                AbortSelection(TranslationStatus.SelectionFailed);
+            }
+        }
+        catch (Exception exception)
+        {
+            // Сбой не должен ронять приложение: пользователь нажмёт ещё раз.
+            _detail = $"{exception.GetType().Name}: {exception.Message}";
+            AbortSelection(TranslationStatus.ReadFailed);
+        }
+    }
+
+    private void AbortSelection(TranslationStatus status)
+    {
+        _isSelecting = false;
+        _isDragging = false;
+        _platform.MouseCapture.Stop();
+        HideOverlay();
+        ReleaseSnapshot();
+        Report(status);
+    }
+
+    private void ReleaseSnapshot()
+    {
+        _snapshot?.Dispose();
+        _snapshot = null;
+    }
+
+    private static TranslationStatus ToStatus(TextReadStatus status) => status switch
+    {
+        TextReadStatus.PermissionMissing => TranslationStatus.ScreenPermissionMissing,
+        TextReadStatus.EmptyCapture => TranslationStatus.EmptyCapture,
+        _ => TranslationStatus.ReadFailed,
+    };
 
     private bool CanUseMouse() => _engine.Snapshot.State is not (EngineState.Acting or EngineState.PickingPoint or EngineState.RecordingMacro);
 
@@ -298,16 +372,13 @@ public sealed class ScreenTranslator
             return false;
         }
 
+        // Кадр застыл, поэтому сверяемся с границами окна на момент снимка.
         var foreground = _platform.Windows.GetForegroundWindow();
-        if (!_platform.Windows.FindRobloxWindows().Contains(foreground)
-            || _platform.Windows.GetBounds(foreground) is not { } bounds
-            || !bounds.Contains(point))
+        if (!_platform.Windows.FindRobloxWindows().Contains(foreground) || !_selectionBounds.Contains(point))
         {
             return false;
         }
 
-        _selectionWindow = foreground;
-        _selectionBounds = bounds;
         _dragStart = point;
         _dragCurrent = point;
         _isDragging = true;
@@ -347,18 +418,23 @@ public sealed class ScreenTranslator
         await _clock.Yield();
         var area = DraggedArea();
         var bounds = _selectionBounds;
+        var snapshot = _snapshot;
+        _snapshot = null;
         _isSelecting = false;
         _isDragging = false;
         HideOverlay();
 
-        if (area.Width < MinAreaSize || area.Height < MinAreaSize)
+        using (snapshot)
         {
-            Report(TranslationStatus.AreaTooSmall);
-            return;
-        }
+            if (area.Width < MinAreaSize || area.Height < MinAreaSize)
+            {
+                Report(TranslationStatus.AreaTooSmall);
+                return;
+            }
 
-        _engine.UpdateSettings(settings => settings with { TranslationArea = WindowArea.FromScreen(area, bounds) });
-        await ReadAndTranslateAsync(isUpdate: false);
+            _engine.UpdateSettings(settings => settings with { TranslationArea = WindowArea.FromScreen(area, bounds) });
+            await ReadAndTranslateAsync(isUpdate: false, snapshot, area);
+        }
     }
 
     private ScreenRect DraggedArea()
@@ -371,7 +447,7 @@ public sealed class ScreenTranslator
         return new ScreenRect(left, top, right - left, bottom - top);
     }
 
-    private async Task ReadAndTranslateAsync(bool isUpdate)
+    private async Task ReadAndTranslateAsync(bool isUpdate, ScreenSnapshot? snapshot = null, ScreenRect? snapshotArea = null)
     {
         var settings = Settings;
         if (settings.TranslationArea is not { } selected)
@@ -397,20 +473,34 @@ public sealed class ScreenTranslator
                 SetStatus(TranslationStatus.Reading);
             }
 
-            var window = await PrepareWindowAsync(isUpdate);
-            if (window is null || _platform.Windows.GetBounds(window.Value) is not { } bounds)
+            ScreenRect bounds;
+            ScreenRect area;
+            TextReadResult read;
+            if (snapshot is not null && snapshotArea is { } frozenArea)
             {
-                return;
+                bounds = snapshot.Bounds;
+                area = frozenArea;
+                read = await _platform.TextReader.ReadAsync(snapshot, area, cancel.Token);
+            }
+            else
+            {
+                var window = await PrepareWindowAsync(isUpdate);
+                if (window is null || _platform.Windows.GetBounds(window.Value) is not { } liveBounds)
+                {
+                    return;
+                }
+
+                bounds = liveBounds;
+                area = selected.ToScreen(bounds);
+                if (_isOverlayVisible && TextLayout.Overlaps(_shownPanel, area))
+                {
+                    HideOverlay();
+                    await _clock.Delay(OverlayHideDelay);
+                }
+
+                read = await _platform.TextReader.ReadAsync(area, cancel.Token);
             }
 
-            var area = selected.ToScreen(bounds);
-            if (_isOverlayVisible && TextLayout.Overlaps(_shownPanel, area))
-            {
-                HideOverlay();
-                await _clock.Delay(OverlayHideDelay);
-            }
-
-            var read = await _platform.TextReader.ReadAsync(area, cancel.Token);
             if (cancel.IsCancellationRequested)
             {
                 return;
@@ -419,12 +509,7 @@ public sealed class ScreenTranslator
             if (read.Status != TextReadStatus.Success)
             {
                 _detail = read.Detail;
-                Report(read.Status switch
-                {
-                    TextReadStatus.PermissionMissing => TranslationStatus.ScreenPermissionMissing,
-                    TextReadStatus.EmptyCapture => TranslationStatus.EmptyCapture,
-                    _ => TranslationStatus.ReadFailed,
-                });
+                Report(ToStatus(read.Status));
                 return;
             }
 
@@ -530,16 +615,6 @@ public sealed class ScreenTranslator
         _shownPanel = _overlay.ShowText(area, bounds, text, isError);
         _shownWindow = bounds;
         _isOverlayVisible = true;
-    }
-
-    /// <summary>Пока кнопка мыши не нажата, рамки нет, и без подсказки не видно, что приложение ждёт выделения.</summary>
-    private void ShowSelectionPrompt(WindowHandle window)
-    {
-        if (_platform.Windows.GetBounds(window) is { } bounds)
-        {
-            var top = new ScreenRect(bounds.X + bounds.Width / 4, bounds.Y, 0, 0);
-            ShowOnOverlay(top, bounds, SelectionPrompt, isError: false);
-        }
     }
 
     private void HideOverlay()

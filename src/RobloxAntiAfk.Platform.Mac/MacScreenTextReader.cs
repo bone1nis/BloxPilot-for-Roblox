@@ -23,9 +23,37 @@ internal sealed class MacScreenTextReader : IScreenTextReader
 
     public async Task<TextReadResult> ReadAsync(ScreenRect area, CancellationToken cancellation)
     {
+        var capture = await CaptureAsync(area, cancellation);
+        if (capture.Snapshot is not { } snapshot)
+        {
+            return TextReadResult.Of(capture.Status, capture.Detail);
+        }
+
+        using (snapshot)
+        {
+            return await ReadAsync(snapshot, area, cancellation);
+        }
+    }
+
+    public async Task<TextReadResult> ReadAsync(ScreenSnapshot snapshot, ScreenRect area, CancellationToken cancellation)
+    {
+        try
+        {
+            var path = snapshot.ImagePath ?? throw new InvalidOperationException("В снимке нет изображения.");
+            var region = WindowArea.FromScreen(area, snapshot.Bounds);
+            return new TextReadResult(TextReadStatus.Success, await Task.Run(() => MacVision.Recognize(path, region), CancellationToken.None));
+        }
+        catch (Exception exception)
+        {
+            return TextReadResult.Of(TextReadStatus.Failed, $"{exception.GetType().Name}: {exception.Message}");
+        }
+    }
+
+    public async Task<SnapshotResult> CaptureAsync(ScreenRect area, CancellationToken cancellation)
+    {
         if (!IsPermissionGranted)
         {
-            return TextReadResult.Of(TextReadStatus.PermissionMissing);
+            return new SnapshotResult(TextReadStatus.PermissionMissing, null);
         }
 
         var path = Path.Combine(Path.GetTempPath(), $"roblox-antiafk-{Guid.NewGuid():N}.png");
@@ -38,28 +66,22 @@ internal sealed class MacScreenTextReader : IScreenTextReader
             });
             if (capture is null)
             {
-                return TextReadResult.Of(TextReadStatus.Failed, "Не удалось запустить screencapture.");
+                return new SnapshotResult(TextReadStatus.Failed, null, "Не удалось запустить screencapture.");
             }
 
             await capture.WaitForExitAsync(cancellation);
-            if (capture.ExitCode != 0 || !File.Exists(path))
+            if (capture.ExitCode == 0 && File.Exists(path))
             {
-                return TextReadResult.Of(TextReadStatus.Failed, $"screencapture завершился с кодом {capture.ExitCode}.");
+                return new SnapshotResult(TextReadStatus.Success, new ScreenSnapshot(area, null, path));
             }
 
-            return new TextReadResult(TextReadStatus.Success, await Task.Run(() => MacVision.Recognize(path), CancellationToken.None));
-        }
-        catch (OperationCanceledException)
-        {
-            return new TextReadResult(TextReadStatus.Success, []);
+            File.Delete(path);
+            return new SnapshotResult(TextReadStatus.Failed, null, $"screencapture завершился с кодом {capture.ExitCode}.");
         }
         catch (Exception exception)
         {
-            return TextReadResult.Of(TextReadStatus.Failed, $"{exception.GetType().Name}: {exception.Message}");
-        }
-        finally
-        {
             File.Delete(path);
+            return new SnapshotResult(TextReadStatus.Failed, null, $"{exception.GetType().Name}: {exception.Message}");
         }
     }
 
@@ -84,7 +106,9 @@ internal static class MacVision
 
     private static readonly nint Framework = NativeLibrary.Load("/System/Library/Frameworks/Vision.framework/Vision");
 
-    public static IReadOnlyList<RecognizedLine> Recognize(string imagePath)
+    /// <param name="imagePath">Снимок на диске.</param>
+    /// <param name="region">Какую часть снимка читать. Результат считается в долях этой части.</param>
+    public static IReadOnlyList<RecognizedLine> Recognize(string imagePath, WindowArea? region = null)
     {
         GC.KeepAlive(Framework);
         var pool = ObjC.objc_autoreleasePoolPush();
@@ -101,6 +125,12 @@ internal static class MacVision
             ObjC.Send(request, "setRecognitionLevel:", (nint)AccurateRecognition);
             ObjC.Send(request, "setUsesLanguageCorrection:", 1);
             ObjC.Send(request, "setRecognitionLanguages:", ObjC.Send(ObjC.Class("NSArray"), "arrayWithObject:", language));
+
+            if (region is { } part)
+            {
+                // У Vision начало координат внизу слева.
+                ObjC.SetRegionOfInterest(request, new CGRect { X = part.X, Y = 1 - part.Y - part.Height, Width = part.Width, Height = part.Height });
+            }
 
             var requests = ObjC.Send(ObjC.Class("NSArray"), "arrayWithObject:", request);
             if (ObjC.Send(imageHandler, "performRequests:error:", requests, 0) == 0)

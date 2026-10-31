@@ -31,6 +31,8 @@ internal static partial class ObjC
         ? SendRectStret(target, Selector(selector))
         : SendRectDirect(target, Selector(selector));
 
+    public static void SetRegionOfInterest(nint request, CGRect region) => SendRectArgument(request, Selector("setRegionOfInterest:"), region);
+
     public static string? ToText(nint text) => text == 0 ? null : Marshal.PtrToStringUTF8(Send(text, "UTF8String"));
 
     public static int SendInt(nint target, string selector) => SendInt32(target, Selector(selector));
@@ -73,6 +75,9 @@ internal static partial class ObjC
 
     [LibraryImport(Library, EntryPoint = "objc_msgSend")]
     private static partial CGRect SendRectDirect(nint target, nint selector);
+
+    [LibraryImport(Library, EntryPoint = "objc_msgSend")]
+    private static partial void SendRectArgument(nint target, nint selector, CGRect argument);
 
     [LibraryImport(Library, EntryPoint = "objc_msgSend_stret")]
     private static partial CGRect SendRectStret(nint target, nint selector);

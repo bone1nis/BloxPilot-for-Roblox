@@ -143,6 +143,12 @@ public interface IScreenTextReader
     void OpenPermissionSettings();
 
     Task<TextReadResult> ReadAsync(ScreenRect area, CancellationToken cancellation);
+
+    /// <summary>Снимает кадр, чтобы показать его на время выделения.</summary>
+    Task<SnapshotResult> CaptureAsync(ScreenRect area, CancellationToken cancellation);
+
+    /// <summary>Читает часть уже снятого кадра, а не экран.</summary>
+    Task<TextReadResult> ReadAsync(ScreenSnapshot snapshot, ScreenRect area, CancellationToken cancellation);
 }
 
 /// <summary>Настраивает окно подписи: клики идут сквозь него, оно не забирает фокус и видно поверх игры.</summary>

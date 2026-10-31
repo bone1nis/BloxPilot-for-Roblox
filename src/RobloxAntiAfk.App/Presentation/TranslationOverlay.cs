@@ -1,4 +1,7 @@
+using System.Runtime.InteropServices;
 using Avalonia;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using RobloxAntiAfk.App.Views;
 using RobloxAntiAfk.Core.Abstractions;
 using RobloxAntiAfk.Core.Domain;
@@ -16,19 +19,36 @@ public sealed class TranslationOverlay(IOverlaySupport support, bool isMac) : IT
     private const double PanelGap = 8;
 
     private OverlayWindow? _window;
+    private Bitmap? _frozen;
+    private ScreenRect _frozenBounds;
 
     public nint Handle => _window?.TryGetPlatformHandle()?.Handle ?? 0;
 
-    public void ShowSelection(ScreenRect area)
+    public void ShowFrozen(ScreenSnapshot snapshot, string prompt)
     {
         var window = _window ??= new OverlayWindow();
-        window.ShowFrame();
-        Place(window, area, ScaleAt(window, area), aboveFullScreen: false);
+        ReleaseFrozen(window);
+        _frozen = ToBitmap(snapshot);
+        _frozenBounds = snapshot.Bounds;
+        window.ShowFrozen(_frozen, prompt);
+        Place(window, snapshot.Bounds, ScaleAt(window, snapshot.Bounds), IsFullScreen(window, snapshot.Bounds));
+    }
+
+    public void ShowSelection(ScreenRect area)
+    {
+        if (_window is not { } window)
+        {
+            return;
+        }
+
+        var scale = ScaleAt(window, _frozenBounds);
+        window.ShowFrame((area.X - _frozenBounds.X) / scale, (area.Y - _frozenBounds.Y) / scale, area.Width / scale, area.Height / scale);
     }
 
     public ScreenRect ShowText(ScreenRect area, ScreenRect robloxWindow, string text, bool isError)
     {
         var window = _window ??= new OverlayWindow();
+        ReleaseFrozen(window);
         var scale = ScaleAt(window, area);
         var width = Math.Min(Math.Max(area.Width, PanelWidth * scale), robloxWindow.Width);
         var height = window.ShowMessage(text, isError, width / scale) * scale;
@@ -39,8 +59,34 @@ public sealed class TranslationOverlay(IOverlaySupport support, bool isMac) : IT
 
     public void Hide()
     {
-        _window?.Hide();
+        if (_window is { } window)
+        {
+            window.Hide();
+            ReleaseFrozen(window);
+        }
+
         support.Release();
+    }
+
+    private void ReleaseFrozen(OverlayWindow window)
+    {
+        window.ClearFrozen();
+        _frozen?.Dispose();
+        _frozen = null;
+    }
+
+    /// <summary>На Windows снимок уже в памяти, а на Mac его сохраняет системная утилита.</summary>
+    private static Bitmap ToBitmap(ScreenSnapshot snapshot)
+    {
+        if (snapshot.Pixels is not { } image)
+        {
+            return new Bitmap(snapshot.ImagePath ?? throw new InvalidOperationException("В снимке нет изображения."));
+        }
+
+        var bitmap = new WriteableBitmap(new PixelSize(image.Width, image.Height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
+        using var target = bitmap.Lock();
+        Marshal.Copy(image.Bgra, 0, target.Address, image.Bgra.Length);
+        return bitmap;
     }
 
     private void Place(OverlayWindow window, ScreenRect rect, double scale, bool aboveFullScreen)

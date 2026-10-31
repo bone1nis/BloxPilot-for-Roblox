@@ -146,4 +146,36 @@ Dispatcher.UIThread.RunJobs();
 overlayWindow.CaptureRenderedFrame()!.Save(Path.Combine(outputFolder, "overlay.png"));
 overlayWindow.Close();
 
+// Кадр рисуется поверх подставной картинки: это только проверка вида рамки и подсказки.
+var framePixels = new byte[640 * 360 * 4];
+for (var index = 0; index < framePixels.Length; index += 4)
+{
+    framePixels[index] = (byte)(120 + index % 2560 / 20);
+    framePixels[index + 1] = 90;
+    framePixels[index + 2] = 60;
+    framePixels[index + 3] = 255;
+}
+
+var frozenOverlay = new RobloxAntiAfk.App.Views.OverlayWindow { Width = 640, Height = 360 };
+var frozenBitmap = new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(640, 360), new Vector(96, 96), Avalonia.Platform.PixelFormat.Bgra8888, Avalonia.Platform.AlphaFormat.Opaque);
+using (var target = frozenBitmap.Lock())
+{
+    System.Runtime.InteropServices.Marshal.Copy(framePixels, 0, target.Address, framePixels.Length);
+}
+
+void SaveOverlay(string name)
+{
+    Dispatcher.UIThread.RunJobs();
+    AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+    Dispatcher.UIThread.RunJobs();
+    frozenOverlay.CaptureRenderedFrame()!.Save(Path.Combine(outputFolder, name));
+}
+
+frozenOverlay.ShowFrozen(frozenBitmap, "Зажми левую кнопку мыши и обведи текст");
+frozenOverlay.Show();
+SaveOverlay("frozen-prompt.png");
+frozenOverlay.ShowFrame(120, 200, 400, 90);
+SaveOverlay("frozen-selection.png");
+frozenOverlay.Close();
+
 Console.WriteLine($"Готово: {Path.GetFullPath(outputFolder)}");

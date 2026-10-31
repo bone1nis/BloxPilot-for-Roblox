@@ -112,6 +112,121 @@ public class ScreenTranslatorTests
     }
 
     [Fact]
+    public void Selection_freezes_the_whole_window_and_reads_the_frozen_frame_not_the_screen()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+
+        setup.Translator.BeginSelection();
+
+        Assert.Equal(new ScreenRect(100, 200, 800, 600), Assert.Single(setup.World.TextReader.Captures));
+        Assert.NotNull(setup.Overlay.Frozen);
+
+        setup.World.Capture.Drag(InsideWindow, LaterInsideWindow);
+
+        Assert.Empty(setup.World.TextReader.Reads);
+        Assert.Equal(new ScreenRect(200, 300, 400, 200), Assert.Single(setup.World.TextReader.ReadsFromSnapshot));
+        Assert.Null(setup.Overlay.Frozen);
+        Assert.Equal("Привет", setup.Overlay.Text);
+    }
+
+    [Fact]
+    public void Frame_is_drawn_while_dragging()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        setup.Translator.BeginSelection();
+
+        setup.World.Capture.Drag(InsideWindow, LaterInsideWindow);
+
+        Assert.Equal(new ScreenRect(200, 300, 400, 200), setup.Overlay.LastSelection);
+    }
+
+    [Fact]
+    public void Frame_is_not_taken_of_another_program()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true }, isRobloxInFront: false);
+        setup.World.Windows.RefuseForeground.Add(TestWorld.First);
+
+        setup.Translator.BeginSelection();
+
+        Assert.Empty(setup.World.TextReader.Captures);
+        Assert.False(setup.World.Capture.IsActive);
+        Assert.False(setup.Translator.Snapshot.IsSelecting);
+        Assert.Equal(TranslationStatus.RobloxNotInFront, setup.Translator.Snapshot.Status);
+    }
+
+    [Fact]
+    public void Roblox_is_brought_forward_before_freezing()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true }, isRobloxInFront: false);
+
+        setup.Translator.BeginSelection();
+
+        Assert.Contains("front:1", setup.World.Windows.Log);
+        Assert.Single(setup.World.TextReader.Captures);
+        Assert.True(setup.Translator.Snapshot.IsSelecting);
+    }
+
+    [Theory]
+    [InlineData(TextReadStatus.EmptyCapture, TranslationStatus.EmptyCapture)]
+    [InlineData(TextReadStatus.PermissionMissing, TranslationStatus.ScreenPermissionMissing)]
+    [InlineData(TextReadStatus.Failed, TranslationStatus.ReadFailed)]
+    public void Failed_frame_stops_selection(TextReadStatus capture, TranslationStatus expected)
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        setup.World.TextReader.CaptureResult = new SnapshotResult(capture, null, "подробности");
+
+        setup.Translator.BeginSelection();
+
+        Assert.False(setup.Translator.Snapshot.IsSelecting);
+        Assert.False(setup.World.Capture.IsActive);
+        Assert.Equal(expected, setup.Translator.Snapshot.Status);
+        Assert.Equal("подробности", setup.Translator.Snapshot.Detail);
+    }
+
+    [Fact]
+    public void Temporary_frame_file_is_removed_after_reading_and_after_cancel()
+    {
+        var path = Path.GetTempFileName();
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        setup.World.TextReader.CaptureResult = new SnapshotResult(TextReadStatus.Success, new ScreenSnapshot(new ScreenRect(100, 200, 800, 600), null, path));
+        setup.Translator.BeginSelection();
+
+        setup.World.Capture.Drag(InsideWindow, LaterInsideWindow);
+        Assert.False(File.Exists(path));
+
+        var cancelled = Path.GetTempFileName();
+        setup.Translator.Close();
+        setup.World.TextReader.CaptureResult = new SnapshotResult(TextReadStatus.Success, new ScreenSnapshot(new ScreenRect(100, 200, 800, 600), null, cancelled));
+        setup.Translator.BeginSelection();
+        setup.Translator.CancelSelection();
+        Assert.False(File.Exists(cancelled));
+    }
+
+    [Fact]
+    public void Crop_takes_the_requested_part_of_the_picture()
+    {
+        // Четыре пикселя в ряд, значение первого байта равно номеру пикселя.
+        byte[] pixels = [0, 0, 0, 255, 1, 0, 0, 255, 2, 0, 0, 255, 3, 0, 0, 255];
+        var image = new PixelImage(2, 2, pixels);
+
+        var cropped = image.Crop(new WindowArea(0.5, 0.5, 0.5, 0.5));
+
+        Assert.Equal(1, cropped.Width);
+        Assert.Equal(1, cropped.Height);
+        Assert.Equal(3, cropped.Bgra[0]);
+    }
+
+    [Fact]
+    public void Crop_never_goes_outside_the_picture()
+    {
+        var image = new PixelImage(2, 2, new byte[16]);
+
+        var cropped = image.Crop(new WindowArea(1, 1, 1, 1));
+
+        Assert.Equal(4, cropped.Bgra.Length);
+    }
+
+    [Fact]
     public void Each_time_mode_cycles_select_translate_hide_and_select_again()
     {
         var setup = Create(new AppSettings { TranslationEnabled = true });
@@ -133,8 +248,9 @@ public class ScreenTranslatorTests
         setup.World.Capture.Drag(new ScreenPoint(150, 250), new ScreenPoint(350, 450));
 
         Assert.Equal("Привет", setup.Overlay.Text);
-        Assert.Equal(2, setup.World.TextReader.Reads.Count);
-        var second = setup.World.TextReader.Reads[1];
+        Assert.Equal(2, setup.World.TextReader.ReadsFromSnapshot.Count);
+        Assert.Empty(setup.World.TextReader.Reads);
+        var second = setup.World.TextReader.ReadsFromSnapshot[1];
         Assert.Equal(150, second.X, 6);
         Assert.Equal(250, second.Y, 6);
         Assert.Equal(200, second.Width, 6);

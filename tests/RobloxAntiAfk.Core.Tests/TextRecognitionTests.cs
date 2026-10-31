@@ -90,6 +90,44 @@ public class TextRecognitionTests
         }
     }
 
+    /// <summary>В застывшем кадре читается только выделенная часть.</summary>
+    [Fact]
+    public void Mac_vision_reads_only_the_requested_region()
+    {
+        Assert.SkipUnless(OperatingSystem.IsMacOS(), "Проверка только для macOS");
+        var path = Path.Combine(Path.GetTempPath(), $"roblox-antiafk-test-{Guid.NewGuid():N}.png");
+        try
+        {
+            using var bitmap = Draw(["Talk to the merchant", "", "", "", "Collect golden coins"], 24, new SKColor(24, 28, 38), SKColors.White);
+            using (var output = File.Create(path))
+            {
+                bitmap.Encode(output, SKEncodedImageFormat.Png, 100);
+            }
+
+            var bottom = string.Join(' ', MacVision.Recognize(path, new WindowArea(0, 0.6, 1, 0.4)).Select(line => line.Text));
+
+            Assert.Contains("Collect", bottom, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("merchant", bottom, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Windows_recognizer_reads_a_cropped_part_of_a_frame()
+    {
+        using var bitmap = Draw(["Talk to the merchant", "", "", "", "Collect golden coins"], 24, new SKColor(24, 28, 38), SKColors.White);
+        var frame = new PixelImage(bitmap.Width, bitmap.Height, bitmap.Bytes);
+
+        var result = Rapid.Recognize(frame.Crop(new WindowArea(0, 0.6, 1, 0.4)), TestContext.Current.CancellationToken);
+
+        var text = string.Join(' ', result.Select(line => line.Text));
+        Assert.Contains("Collect", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("merchant", text, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void Screen_capture_arguments_are_silent_and_rounded() =>
         Assert.Equal(

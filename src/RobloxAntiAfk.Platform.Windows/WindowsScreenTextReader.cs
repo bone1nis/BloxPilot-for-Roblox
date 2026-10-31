@@ -16,7 +16,32 @@ internal sealed unsafe class WindowsScreenTextReader(ITextRecognizer? recognizer
     {
     }
 
-    public Task<TextReadResult> ReadAsync(ScreenRect area, CancellationToken cancellation) => Task.Run(() =>
+    public Task<TextReadResult> ReadAsync(ScreenRect area, CancellationToken cancellation) =>
+        Task.Run(() => Recognize(() => Capture(area), cancellation), CancellationToken.None);
+
+    public Task<TextReadResult> ReadAsync(ScreenSnapshot snapshot, ScreenRect area, CancellationToken cancellation) =>
+        Task.Run(
+            () => Recognize(
+                () => (snapshot.Pixels ?? throw new InvalidOperationException("В снимке нет изображения.")).Crop(WindowArea.FromScreen(area, snapshot.Bounds)),
+                cancellation),
+            CancellationToken.None);
+
+    public Task<SnapshotResult> CaptureAsync(ScreenRect area, CancellationToken cancellation) => Task.Run(() =>
+    {
+        try
+        {
+            var image = Capture(area);
+            return IsSingleColor(image)
+                ? new SnapshotResult(TextReadStatus.EmptyCapture, null)
+                : new SnapshotResult(TextReadStatus.Success, new ScreenSnapshot(area, image, null));
+        }
+        catch (Exception exception)
+        {
+            return new SnapshotResult(TextReadStatus.Failed, null, $"{exception.GetType().Name}: {exception.Message}");
+        }
+    }, CancellationToken.None);
+
+    private TextReadResult Recognize(Func<PixelImage> getImage, CancellationToken cancellation)
     {
         if (recognizer is null)
         {
@@ -25,7 +50,7 @@ internal sealed unsafe class WindowsScreenTextReader(ITextRecognizer? recognizer
 
         try
         {
-            var image = Capture(area);
+            var image = getImage();
             return IsSingleColor(image)
                 ? TextReadResult.Of(TextReadStatus.EmptyCapture)
                 : new TextReadResult(TextReadStatus.Success, recognizer.Recognize(image, cancellation));
@@ -38,7 +63,7 @@ internal sealed unsafe class WindowsScreenTextReader(ITextRecognizer? recognizer
         {
             return TextReadResult.Of(TextReadStatus.Failed, $"{exception.GetType().Name}: {exception.Message}");
         }
-    }, CancellationToken.None);
+    }
 
     internal static PixelImage Capture(ScreenRect area)
     {

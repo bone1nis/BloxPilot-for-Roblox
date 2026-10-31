@@ -213,6 +213,9 @@ public sealed class FakeTextReader : IScreenTextReader
     public int PermissionRequests { get; private set; }
     public List<ScreenRect> Reads { get; } = [];
     public TextReadResult Result { get; set; } = new(TextReadStatus.Success, []);
+    public SnapshotResult? CaptureResult { get; set; }
+    public List<ScreenRect> Captures { get; } = [];
+    public List<ScreenRect> ReadsFromSnapshot { get; } = [];
 
     public void RequestPermission() => PermissionRequests++;
 
@@ -225,18 +228,42 @@ public sealed class FakeTextReader : IScreenTextReader
         Reads.Add(area);
         return Task.FromResult(Result);
     }
+
+    public Task<SnapshotResult> CaptureAsync(ScreenRect area, CancellationToken cancellation)
+    {
+        Captures.Add(area);
+        return Task.FromResult(CaptureResult ?? new SnapshotResult(TextReadStatus.Success, new ScreenSnapshot(area, null, null)));
+    }
+
+    public Task<TextReadResult> ReadAsync(ScreenSnapshot snapshot, ScreenRect area, CancellationToken cancellation)
+    {
+        ReadsFromSnapshot.Add(area);
+        return Task.FromResult(Result);
+    }
 }
 
 public sealed class FakeOverlay : ITranslationOverlay
 {
     public ScreenRect? Selection { get; private set; }
+    public ScreenRect? LastSelection { get; private set; }
+    public ScreenSnapshot? Frozen { get; private set; }
     public string? Text { get; private set; }
     public bool IsError { get; private set; }
     public ScreenRect? Window { get; private set; }
     public int Hides { get; private set; }
     public ScreenRect PanelToReturn { get; set; } = new(0, 0, 1, 1);
 
-    public void ShowSelection(ScreenRect area) => Selection = area;
+    public void ShowFrozen(ScreenSnapshot snapshot, string prompt)
+    {
+        Frozen = snapshot;
+        Text = prompt;
+    }
+
+    public void ShowSelection(ScreenRect area)
+    {
+        Selection = area;
+        LastSelection = area;
+    }
 
     public ScreenRect ShowText(ScreenRect area, ScreenRect window, string text, bool isError)
     {
@@ -249,6 +276,7 @@ public sealed class FakeOverlay : ITranslationOverlay
     public void Hide()
     {
         Hides++;
+        Frozen = null;
         Selection = null;
         Text = null;
     }

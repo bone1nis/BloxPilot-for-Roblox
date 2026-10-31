@@ -43,6 +43,29 @@ internal static class SelfTest
             var captured = string.Join(' ', read.Lines.Select(line => line.Text));
             report.Add($"{(captured.Contains("merchant", StringComparison.OrdinalIgnoreCase) ? "OK" : "WARN")} снимок подписи: {read.Status} '{captured}' {read.Detail}");
             report.Add($"{(platform.Overlay.IsClickThrough(overlay.Handle, panel.Center) ? "OK" : "WARN")} клики идут сквозь подпись");
+
+            var snapshot = await platform.TextReader.CaptureAsync(panel, CancellationToken.None);
+            overlay.Hide();
+            if (snapshot.Snapshot is { } frozen)
+            {
+                using (frozen)
+                {
+                    var fromFrame = await platform.TextReader.ReadAsync(frozen, panel, CancellationToken.None);
+                    report.Add($"{(Contains(fromFrame) ? "OK" : "WARN")} чтение застывшего кадра: {fromFrame.Status} '{Joined(fromFrame)}' {fromFrame.Detail}");
+
+                    // Подпись спрятана, так что текст на экране теперь есть только в показанном кадре.
+                    overlay.ShowFrozen(frozen, "");
+                    overlay.ShowSelection(new ScreenRect(panel.X, panel.Y, 1, 1));
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+                    var shown = await platform.TextReader.ReadAsync(panel, CancellationToken.None);
+                    report.Add($"{(Contains(shown) ? "OK" : "WARN")} показ застывшего кадра: {shown.Status} '{Joined(shown)}' {shown.Detail}");
+                }
+            }
+            else
+            {
+                report.Add($"WARN снимок для кадра: {snapshot.Status} {snapshot.Detail}");
+            }
+
             overlay.Hide();
         }
         catch (Exception exception)
@@ -53,6 +76,10 @@ internal static class SelfTest
         await File.WriteAllLinesAsync(reportPath, report);
         return exitCode;
     }
+
+    private static string Joined(TextReadResult result) => string.Join(' ', result.Lines.Select(line => line.Text));
+
+    private static bool Contains(TextReadResult result) => Joined(result).Contains("merchant", StringComparison.OrdinalIgnoreCase);
 
     private static PixelImage DrawSample()
     {
