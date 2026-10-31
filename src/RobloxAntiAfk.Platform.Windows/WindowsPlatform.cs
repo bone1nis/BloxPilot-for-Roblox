@@ -25,7 +25,7 @@ public static class WindowsPlatform
             new WindowsLauncher(),
             new RobloxLogWatcher(Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "logs")),
-            new WindowsHotkey(2, NativeMethods.VirtualKeyF9, "Ctrl+Shift+F9"),
+            new WindowsHotkey(2, NativeMethods.VirtualKeyX, "Ctrl+Shift+X"),
             new WindowsScreenTextReader(recognizer),
             new WindowsOverlaySupport(),
             WindowSettleDelay: TimeSpan.FromMilliseconds(500));

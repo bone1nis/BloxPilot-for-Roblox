@@ -77,6 +77,8 @@ runningWorld.Clock.Advance(TimeSpan.FromSeconds(113));
 running.Tick();
 Capture("rules", running, MainTab.Rules);
 Capture("rules-windows", running, MainTab.Rules, isMac: false);
+Capture("rules-all-windows", running, MainTab.Rules, isMac: false, height: 2100);
+Capture("rules-all-mac", running, MainTab.Rules, height: 2200);
 Capture("statistics-running", running, MainTab.Statistics);
 
 var (walk, walkWorld) = CreateEngine(new AppSettings { Action = AfkAction.Walk, IntervalMinutes = 17 }, w => w.WithRoblox(TestWorld.Second));

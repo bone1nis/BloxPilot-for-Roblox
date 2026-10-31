@@ -25,7 +25,7 @@ public sealed partial class MainViewModel : ObservableObject
         Status = new StatusViewModel(engine);
         Settings = new SettingsViewModel(engine, telegram);
         Statistics = new StatisticsViewModel(engine);
-        Rules = new RulesViewModel(IsMac);
+        Rules = new RulesViewModel(IsMac, translator.Snapshot.HotkeyLabel);
         Translation = new TranslationViewModel(engine, translator);
 
         engine.Changed += Refresh;

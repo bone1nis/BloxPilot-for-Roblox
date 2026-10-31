@@ -4,7 +4,7 @@ using RobloxAntiAfk.Core.Domain;
 
 namespace RobloxAntiAfk.App.ViewModels;
 
-public sealed partial class RulesViewModel(bool isMac) : ObservableObject
+public sealed partial class RulesViewModel(bool isMac, string translationHotkey) : ObservableObject
 {
     private AppSettings? _shownSettings;
 
@@ -15,7 +15,7 @@ public sealed partial class RulesViewModel(bool isMac) : ObservableObject
         if (settings != _shownSettings)
         {
             _shownSettings = settings;
-            Sections = RuleCatalog.Build(settings, isMac);
+            Sections = RuleCatalog.Build(settings, isMac, translationHotkey);
         }
     }
 }

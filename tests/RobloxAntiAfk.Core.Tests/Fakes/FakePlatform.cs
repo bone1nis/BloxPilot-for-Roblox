@@ -338,7 +338,7 @@ public sealed class TestWorld
     public FakeAudio Audio { get; } = new();
     public FakeLauncher Launcher { get; } = new();
     public FakeDisconnects Disconnects { get; } = new();
-    public FakeHotkey TranslationHotkey { get; } = new("Ctrl+Shift+F9");
+    public FakeHotkey TranslationHotkey { get; } = new("Ctrl+Shift+X");
     public FakeTextReader TextReader { get; } = new();
 
     public PlatformServices Platform =>
