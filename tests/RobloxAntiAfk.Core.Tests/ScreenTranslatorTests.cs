@@ -38,7 +38,7 @@ public class ScreenTranslatorTests
     }
 
     private static Setup Create(AppSettings? settings = null, bool isRobloxInFront = true) =>
-        new(settings ?? new AppSettings { TranslationEnabled = true, TranslationArea = Area }, isRobloxInFront);
+        new(settings ?? new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false }, isRobloxInFront);
 
     [Fact]
     public void Hotkey_is_taken_only_while_translation_is_enabled()
@@ -97,6 +97,93 @@ public class ScreenTranslatorTests
         setup.World.TranslationHotkey.Press();
         Assert.False(setup.Translator.Snapshot.IsSelecting);
         Assert.False(setup.World.Capture.IsActive);
+    }
+
+    [Fact]
+    public void Selection_explains_itself_on_screen_and_the_hint_goes_away_on_cancel()
+    {
+        var setup = Create();
+
+        setup.Translator.BeginSelection();
+        Assert.Contains("обведи", setup.Overlay.Text);
+
+        setup.Translator.CancelSelection();
+        Assert.Null(setup.Overlay.Text);
+    }
+
+    [Fact]
+    public void Each_time_mode_cycles_select_translate_hide_and_select_again()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        Assert.Equal(TranslationStatus.ReadyToSelect, setup.Translator.Snapshot.Status);
+
+        setup.World.TranslationHotkey.Press();
+        Assert.True(setup.Translator.Snapshot.IsSelecting);
+        setup.World.Capture.Drag(InsideWindow, LaterInsideWindow);
+        Assert.Equal("Привет", setup.Overlay.Text);
+        Assert.False(setup.Translator.Snapshot.IsSelecting);
+
+        setup.World.TranslationHotkey.Press();
+        Assert.Null(setup.Overlay.Text);
+        Assert.False(setup.Translator.Snapshot.IsSelecting);
+        Assert.Equal(TranslationStatus.ReadyToSelect, setup.Translator.Snapshot.Status);
+
+        setup.World.TranslationHotkey.Press();
+        Assert.True(setup.Translator.Snapshot.IsSelecting);
+        setup.World.Capture.Drag(new ScreenPoint(150, 250), new ScreenPoint(350, 450));
+
+        Assert.Equal("Привет", setup.Overlay.Text);
+        Assert.Equal(2, setup.World.TextReader.Reads.Count);
+        var second = setup.World.TextReader.Reads[1];
+        Assert.Equal(150, second.X, 6);
+        Assert.Equal(250, second.Y, 6);
+        Assert.Equal(200, second.Width, 6);
+        Assert.Equal(200, second.Height, 6);
+    }
+
+    [Fact]
+    public void Each_time_mode_ignores_the_saved_area_and_second_press_cancels()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area });
+
+        setup.World.TranslationHotkey.Press();
+        Assert.True(setup.Translator.Snapshot.IsSelecting);
+        Assert.Empty(setup.World.TextReader.Reads);
+
+        setup.World.TranslationHotkey.Press();
+        Assert.False(setup.Translator.Snapshot.IsSelecting);
+        Assert.Empty(setup.World.TextReader.Reads);
+    }
+
+    [Fact]
+    public void Each_time_mode_button_starts_selection()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+
+        setup.Translator.TranslateNow();
+
+        Assert.True(setup.Translator.Snapshot.IsSelecting);
+    }
+
+    [Fact]
+    public void Each_time_mode_is_on_by_default_even_for_settings_saved_before_it_existed()
+    {
+        Assert.True(new AppSettings().TranslationSelectEachTime);
+
+        var old = System.Text.Json.JsonSerializer.Deserialize<AppSettings>("""{"TranslationEnabled":true}""");
+
+        Assert.True(old!.TranslationSelectEachTime);
+    }
+
+    [Fact]
+    public void With_the_mode_off_saved_area_is_read_directly()
+    {
+        var setup = Create();
+
+        setup.World.TranslationHotkey.Press();
+
+        Assert.False(setup.Translator.Snapshot.IsSelecting);
+        Assert.Single(setup.World.TextReader.Reads);
     }
 
     [Fact]
@@ -205,7 +292,7 @@ public class ScreenTranslatorTests
     [Fact]
     public void Auto_refresh_never_reads_another_program()
     {
-        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationAutoRefresh = true });
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false, TranslationAutoRefresh = true });
         setup.Translator.TranslateNow();
         setup.World.Windows.Foreground = TestWorld.OtherApp;
 
@@ -234,7 +321,7 @@ public class ScreenTranslatorTests
     [Fact]
     public void Auto_refresh_sends_text_only_when_it_changes()
     {
-        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationAutoRefresh = true });
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false, TranslationAutoRefresh = true });
         setup.Translator.TranslateNow();
 
         setup.World.Clock.Advance(TimeSpan.FromSeconds(3));
@@ -251,7 +338,7 @@ public class ScreenTranslatorTests
     [Fact]
     public void Auto_refresh_hides_the_panel_when_the_text_disappears_and_keeps_watching()
     {
-        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationAutoRefresh = true });
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false, TranslationAutoRefresh = true });
         setup.Translator.TranslateNow();
 
         setup.World.TextReader.Result = new TextReadResult(TextReadStatus.Success, []);
@@ -324,7 +411,7 @@ public class ScreenTranslatorTests
     [Fact]
     public void Panel_over_the_area_is_hidden_for_the_snapshot_and_comes_back()
     {
-        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationAutoRefresh = true });
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false, TranslationAutoRefresh = true });
         setup.Overlay.PanelToReturn = new ScreenRect(300, 500, 100, 100);
         setup.Translator.TranslateNow();
 
@@ -339,7 +426,7 @@ public class ScreenTranslatorTests
     [Fact]
     public void Panel_beside_the_area_is_not_hidden_for_the_snapshot()
     {
-        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationAutoRefresh = true });
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false, TranslationAutoRefresh = true });
         setup.Overlay.PanelToReturn = new ScreenRect(300, 660, 100, 40);
         setup.Translator.TranslateNow();
 
@@ -364,7 +451,7 @@ public class ScreenTranslatorTests
     [Fact]
     public void Reset_keeps_area_and_key_but_turns_translation_off()
     {
-        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, DeepLKey = "key:fx", TranslationAutoRefresh = true });
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false, DeepLKey = "key:fx", TranslationAutoRefresh = true });
 
         setup.Engine.ResetSettings();
 

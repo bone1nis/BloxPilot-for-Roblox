@@ -18,7 +18,7 @@
       <StackPanel Spacing="8">
         <TextBlock Classes="strong" Text="Где читать" />
         <WrapPanel>
-          <Button Content="{Binding AreaButtonText}" Command="{Binding AreaButtonCommand}" Margin="0,0,8,0" />
+          <Button Content="{Binding AreaButtonText}" IsVisible="{Binding ShowAreaButton}" Command="{Binding AreaButtonCommand}" Margin="0,0,8,0" />
           <Button Content="{Binding TranslateButtonText}" IsEnabled="{Binding CanTranslate}" Command="{Binding TranslateButtonCommand}" />
         </WrapPanel>
         <TextBlock Classes="muted small" Text="{Binding AreaHint}" />
@@ -26,6 +26,16 @@
         <TextBlock Classes="muted small" IsVisible="{Binding HasDetail}" Text="{Binding Detail}" />
         <Button HorizontalAlignment="Left" IsVisible="{Binding ShowPermission}" Content="Открыть настройки macOS" Command="{Binding OpenPermissionSettingsCommand}" />
       </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding IsEnabled}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Выделять каждый раз" />
+          <TextBlock Classes="muted small" Text="Сочетание каждый раз предлагает обвести текст заново. Если выключить, приложение запомнит одну область и будет читать её сразу" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding SelectEachTime}" />
+      </Grid>
     </Border>
 
     <Border Classes="card" IsVisible="{Binding HasResult}">

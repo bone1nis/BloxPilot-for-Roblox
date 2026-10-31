@@ -34,6 +34,9 @@ public sealed record AppSettings
     public bool TranslationEnabled { get; init; }
     public WindowArea? TranslationArea { get; init; }
     public bool TranslationAutoRefresh { get; init; }
+
+    /// <summary>Сочетание каждый раз предлагает обвести текст заново. Если выключить, читается запомненная область.</summary>
+    public bool TranslationSelectEachTime { get; init; } = true;
     public string DeepLKey { get; init; } = "";
 
     [JsonIgnore]

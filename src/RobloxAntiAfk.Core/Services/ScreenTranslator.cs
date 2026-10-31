@@ -22,6 +22,7 @@ public interface ITranslationOverlay
 public sealed class ScreenTranslator
 {
     public const double MinAreaSize = 12;
+    private const string SelectionPrompt = "Зажми левую кнопку мыши и обведи текст";
     private static readonly TimeSpan SelectionTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan MessageDuration = TimeSpan.FromSeconds(4);
@@ -165,13 +166,13 @@ public sealed class ScreenTranslator
         {
             CancelSelection();
         }
-        else if (Settings.TranslationArea is null)
-        {
-            BeginSelection();
-        }
         else if (_isActive)
         {
             Close();
+        }
+        else if (Settings.TranslationArea is null || Settings.TranslationSelectEachTime)
+        {
+            BeginSelection();
         }
         else
         {
@@ -218,11 +219,14 @@ public sealed class ScreenTranslator
         _isDragging = false;
         _selectionDeadline = _clock.Now + SelectionTimeout;
         _engine.PostponeNextAction(SelectionTimeout);
-        if (!windows.Contains(_platform.Windows.GetForegroundWindow()))
+        var foreground = _platform.Windows.GetForegroundWindow();
+        if (!windows.Contains(foreground))
         {
-            BringForward(windows[0]);
+            foreground = windows[0];
+            BringForward(foreground);
         }
 
+        ShowSelectionPrompt(foreground);
         SetStatus(TranslationStatus.SelectingArea);
     }
 
@@ -243,7 +247,11 @@ public sealed class ScreenTranslator
     /// <summary>Кнопка в приложении: окно Roblox сначала нужно вывести вперёд, иначе снимок будет не тот.</summary>
     public void TranslateNow()
     {
-        if (!_isSelecting && !_isBusy)
+        if (Settings.TranslationSelectEachTime)
+        {
+            BeginSelection();
+        }
+        else if (!_isSelecting && !_isBusy)
         {
             _ = ReadAndTranslateAsync(isUpdate: false);
         }
@@ -524,6 +532,16 @@ public sealed class ScreenTranslator
         _isOverlayVisible = true;
     }
 
+    /// <summary>Пока кнопка мыши не нажата, рамки нет, и без подсказки не видно, что приложение ждёт выделения.</summary>
+    private void ShowSelectionPrompt(WindowHandle window)
+    {
+        if (_platform.Windows.GetBounds(window) is { } bounds)
+        {
+            var top = new ScreenRect(bounds.X + bounds.Width / 4, bounds.Y, 0, 0);
+            ShowOnOverlay(top, bounds, SelectionPrompt, isError: false);
+        }
+    }
+
     private void HideOverlay()
     {
         if (_isOverlayVisible)
@@ -589,9 +607,14 @@ public sealed class ScreenTranslator
             return TranslationStatus.Disabled;
         }
 
+        if (settings.TranslationSelectEachTime)
+        {
+            return TranslationStatus.ReadyToSelect;
+        }
+
         return settings.TranslationArea is null ? TranslationStatus.NeedArea : TranslationStatus.Ready;
     }
 
     private static bool IsIdleStatus(TranslationStatus status) =>
-        status is TranslationStatus.Disabled or TranslationStatus.NeedArea or TranslationStatus.Ready;
+        status is TranslationStatus.Disabled or TranslationStatus.NeedArea or TranslationStatus.Ready or TranslationStatus.ReadyToSelect;
 }

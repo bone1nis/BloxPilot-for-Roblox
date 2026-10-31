@@ -120,6 +120,7 @@ public static class Texts
         TranslationStatus.Disabled => "Перевод выключен.",
         TranslationStatus.NeedArea => "Сначала выбери область.",
         TranslationStatus.Ready => $"Готово. Нажми {snapshot.HotkeyLabel} в игре, когда появится текст.",
+        TranslationStatus.ReadyToSelect => $"Готово. Нажми {snapshot.HotkeyLabel} в игре и обведи текст.",
         TranslationStatus.SelectingArea => "Жду, пока ты обведёшь текст.",
         TranslationStatus.Reading => "Читаю текст...",
         TranslationStatus.Shown => "Перевод показан рядом с областью.",
@@ -138,6 +139,7 @@ public static class Texts
     public static bool IsTranslationProblem(TranslationStatus status) => status is not (TranslationStatus.Disabled
         or TranslationStatus.NeedArea
         or TranslationStatus.Ready
+        or TranslationStatus.ReadyToSelect
         or TranslationStatus.SelectingArea
         or TranslationStatus.Reading
         or TranslationStatus.Shown);

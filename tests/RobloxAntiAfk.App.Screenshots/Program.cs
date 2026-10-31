@@ -120,13 +120,19 @@ waitingWorld.Windows.Roblox.Clear();
 waiting.Tick();
 Capture("waiting", waiting, MainTab.Rules, isMac: false);
 
-var (translation, translationWorld) = CreateEngine(new AppSettings { TranslationEnabled = true, TranslationArea = new WindowArea(0.1, 0.6, 0.8, 0.2) }, isRunning: false);
+var (translation, translationWorld) = CreateEngine(new AppSettings { TranslationEnabled = true }, isRunning: false);
 translationWorld.Windows.Foreground = TestWorld.First;
 translationWorld.TextReader.Result = new TextReadResult(TextReadStatus.Success, [new RecognizedLine("Talk to the merchant to buy a new sword", 0, 0, 1, 0.2)]);
 var translator = CreateTranslator(translation, translationWorld);
 translator.SyncWithSettings();
-translator.TranslateNow();
+translator.BeginSelection();
+translationWorld.Capture.Drag(new ScreenPoint(200, 500), new ScreenPoint(800, 650));
 Capture("translation", translation, MainTab.Translation, translator: translator);
+
+var (eachTime, eachTimeWorld) = CreateEngine(new AppSettings { TranslationEnabled = true }, isRunning: false);
+var eachTimeTranslator = CreateTranslator(eachTime, eachTimeWorld);
+eachTimeTranslator.SyncWithSettings();
+Capture("translation-each-time", eachTime, MainTab.Translation, translator: eachTimeTranslator);
 
 var (translationOff, translationOffWorld) = CreateEngine(new AppSettings(), isRunning: false);
 Capture("translation-off", translationOff, MainTab.Translation, translator: CreateTranslator(translationOff, translationOffWorld));

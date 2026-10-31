@@ -15,6 +15,8 @@ public sealed partial class TranslationViewModel : ObservableObject
 
     [ObservableProperty] private bool _isEnabled;
     [ObservableProperty] private bool _autoRefresh;
+    [ObservableProperty] private bool _selectEachTime;
+    [ObservableProperty] private bool _showAreaButton;
     [ObservableProperty] private string _deepLKey = "";
     [ObservableProperty] private string _statusText = "";
     [ObservableProperty] private bool _isStatusWarning;
@@ -46,24 +48,27 @@ public sealed partial class TranslationViewModel : ObservableObject
 
         IsEnabled = settings.TranslationEnabled;
         AutoRefresh = settings.TranslationAutoRefresh;
+        SelectEachTime = settings.TranslationSelectEachTime;
         DeepLKey = settings.DeepLKey;
 
         StatusText = Texts.TranslationStatusText(snapshot);
         IsStatusWarning = Texts.IsTranslationProblem(snapshot.Status);
         Detail = snapshot.Detail;
         HasDetail = snapshot.Detail.Length > 0;
-        HotkeyHint = snapshot.IsHotkeyActive || !settings.TranslationEnabled
-            ? $"{snapshot.HotkeyLabel} показывает и прячет перевод из любого окна. Первое нажатие предложит выбрать область."
-            : $"Сочетание {snapshot.HotkeyLabel} занято другой программой. Перевод работает только кнопкой ниже.";
+        HotkeyHint = !snapshot.IsHotkeyActive && settings.TranslationEnabled
+            ? $"Сочетание {snapshot.HotkeyLabel} занято другой программой. Перевод работает только кнопкой выше."
+            : settings.TranslationSelectEachTime
+                ? $"{snapshot.HotkeyLabel} из любого окна: первое нажатие предложит обвести текст и покажет перевод, следующее его спрячет."
+                : $"{snapshot.HotkeyLabel} показывает и прячет перевод из любого окна. Первое нажатие предложит выбрать область.";
 
+        ShowAreaButton = snapshot.IsSelecting || !settings.TranslationSelectEachTime;
         AreaButtonText = snapshot.IsSelecting ? "Отменить выбор" : settings.TranslationArea is null ? "Выбрать область" : "Выбрать другую область";
-        AreaHint = snapshot.IsSelecting
-            ? "Зажми левую кнопку мыши в окне Roblox и обведи текст. Этот клик в игру не попадёт. Через 30 секунд выбор отменится сам."
-            : settings.TranslationArea is null
-                ? "Обведи место, где в игре появляется текст: окно диалога, задание или подсказку."
-                : "Область запомнена и двигается вместе с окном Roblox.";
-        TranslateButtonText = snapshot.IsOverlayActive ? "Спрятать перевод" : "Перевести сейчас";
-        CanTranslate = settings.TranslationEnabled && !snapshot.IsSelecting && settings.TranslationArea is not null;
+        AreaHint = AreaHintText(settings, snapshot.IsSelecting);
+        TranslateButtonText = snapshot.IsOverlayActive
+            ? "Спрятать перевод"
+            : settings.TranslationSelectEachTime ? "Выделить и перевести" : "Перевести сейчас";
+        CanTranslate = settings.TranslationEnabled && !snapshot.IsSelecting
+            && (settings.TranslationArea is not null || settings.TranslationSelectEachTime);
         ShowPermission = settings.TranslationEnabled && !snapshot.IsScreenPermissionGranted;
 
         SourceText = snapshot.SourceText;
@@ -105,7 +110,26 @@ public sealed partial class TranslationViewModel : ObservableObject
 
     partial void OnAutoRefreshChanged(bool value) => Change(settings => settings with { TranslationAutoRefresh = value });
 
+    partial void OnSelectEachTimeChanged(bool value) => Change(settings => settings with { TranslationSelectEachTime = value });
+
     partial void OnDeepLKeyChanged(string value) => Change(settings => settings with { DeepLKey = value });
+
+    private static string AreaHintText(AppSettings settings, bool isSelecting)
+    {
+        if (isSelecting)
+        {
+            return "Зажми левую кнопку мыши в окне Roblox и обведи текст. Этот клик в игру не попадёт. Через 30 секунд выбор отменится сам.";
+        }
+
+        if (settings.TranslationSelectEachTime)
+        {
+            return "Каждый раз обводишь нужный текст заново: сочетание, выделение, перевод. Следующее сочетание прячет перевод.";
+        }
+
+        return settings.TranslationArea is null
+            ? "Обведи место, где в игре появляется текст: окно диалога, задание или подсказку."
+            : "Область запомнена и двигается вместе с окном Roblox.";
+    }
 
     private void Change(Func<AppSettings, AppSettings> change)
     {

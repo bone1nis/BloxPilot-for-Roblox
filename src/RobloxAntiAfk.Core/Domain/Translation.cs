@@ -52,6 +52,7 @@ public enum TranslationStatus
     Disabled,
     NeedArea,
     Ready,
+    ReadyToSelect,
     SelectingArea,
     Reading,
     Shown,
