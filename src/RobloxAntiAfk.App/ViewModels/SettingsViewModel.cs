@@ -101,7 +101,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         var isPicking = _state == EngineState.PickingPoint;
         ShowPointButton = settings.ClickPoint is not null || isPicking;
         PointButtonText = isPicking ? "Отменить выбор" : "Выбрать другую точку";
-        CanUsePointButton = _state is EngineState.PickingPoint or EngineState.Running or EngineState.Paused;
+        CanUsePointButton = _state is EngineState.PickingPoint or EngineState.Running or EngineState.Stopped;
         TargetHint = TargetHintText(settings, isPicking);
 
         AllWindows = settings.AllWindows;

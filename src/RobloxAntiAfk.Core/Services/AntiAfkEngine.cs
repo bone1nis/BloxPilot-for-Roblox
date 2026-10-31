@@ -5,7 +5,7 @@ using RobloxAntiAfk.Core.Storage;
 namespace RobloxAntiAfk.Core.Services;
 
 /// <summary>
-/// Главная логика приложения: расписание действий, пауза, настройки и выбор точки.
+/// Главная логика приложения: расписание действий, запуск и остановка, настройки и выбор точки.
 /// Все методы вызываются из одного потока интерфейса, поэтому блокировки не нужны.
 /// </summary>
 public sealed class AntiAfkEngine
@@ -19,13 +19,12 @@ public sealed class AntiAfkEngine
     private readonly IDataStore<AppSettings> _settingsStore;
     private readonly StatisticsTracker _statistics;
     private readonly ActionRunner _runner;
-    private readonly DateTimeOffset _started;
     private readonly List<ActivityEntry> _activity = [];
 
     private AppSettings _settings;
     private DateTimeOffset _nextAction;
-    private EngineState _state = EngineState.Running;
-    private bool _isPaused;
+    private EngineState _state = EngineState.Stopped;
+    private bool _isStopped = true;
     private bool _isActing;
     private bool _isPicking;
     private DateTimeOffset _pickDeadline;
@@ -43,14 +42,16 @@ public sealed class AntiAfkEngine
         _platform = platform;
         _clock = clock;
         _settingsStore = settingsStore;
-        _started = clock.Now;
         _settings = settingsStore.Load().Normalized();
-        _nextAction = _started + _settings.Interval;
-        _statistics = new StatisticsTracker(statisticsStore, _started);
+        _nextAction = clock.Now + _settings.Interval;
+        _statistics = new StatisticsTracker(statisticsStore, clock.Now);
         _runner = new ActionRunner(platform, clock);
     }
 
     public event Action? Changed;
+
+    /// <summary>Выбор точки в выключенном приложении работой не считается.</summary>
+    private bool IsWorking => !_isStopped && _state is EngineState.Running or EngineState.Acting or EngineState.PickingPoint;
 
     public EngineSnapshot Snapshot
     {
@@ -61,20 +62,18 @@ public sealed class AntiAfkEngine
                 _state,
                 left < TimeSpan.Zero ? TimeSpan.Zero : left,
                 _actionsThisRun,
-                _clock.Now - _started,
+                _statistics.ActiveTimeThisRun,
                 _windowCount,
                 _settings,
                 _statistics.Current,
                 _statistics.CurrentSession,
+                _statistics.OngoingSession,
                 _activity.ToArray());
         }
     }
 
-    public void Start()
-    {
-        _platform.Permission.Prompt();
-        ApplySleepMode();
-    }
+    /// <summary>Приложение открывается выключенным: ничего не нажимает, пока пользователь сам не запустит.</summary>
+    public void Start() => ApplySleepMode();
 
     /// <summary>Вызывается раз в секунду.</summary>
     public void Tick()
@@ -98,7 +97,7 @@ public sealed class AntiAfkEngine
             _nextAction = now + _settings.Interval;
         }
 
-        _statistics.Update(_state is EngineState.Running or EngineState.Acting or EngineState.PickingPoint, now);
+        _statistics.Update(IsWorking, now);
 
         if (_state == EngineState.Running && now >= _nextAction)
         {
@@ -108,10 +107,17 @@ public sealed class AntiAfkEngine
         Changed?.Invoke();
     }
 
-    public void TogglePause()
+    public void ToggleRunning()
     {
-        _isPaused = !_isPaused;
+        // Учитываем время до переключения, иначе последняя секунда попадёт не в то состояние.
+        _statistics.Update(IsWorking, _clock.Now);
+        _isStopped = !_isStopped;
         _nextAction = _clock.Now + _settings.Interval;
+        if (!_isStopped && !_platform.Permission.IsGranted)
+        {
+            _platform.Permission.Prompt();
+        }
+
         ApplySleepMode();
         Tick();
     }
@@ -156,6 +162,7 @@ public sealed class AntiAfkEngine
 
         if (!_platform.Permission.IsGranted)
         {
+            _platform.Permission.Prompt();
             AddActivity(ActivitySeverity.Error, ActivityCode.PermissionMissing);
             Changed?.Invoke();
             return;
@@ -207,7 +214,7 @@ public sealed class AntiAfkEngine
     {
         _platform.MouseCapture.Stop();
         _platform.Sleep.Apply(SleepMode.Allow);
-        _statistics.Save();
+        _statistics.Finish();
     }
 
     /// <summary>Вызывается из системного перехвата мыши, поэтому не должен задерживаться.</summary>
@@ -261,9 +268,9 @@ public sealed class AntiAfkEngine
             return EngineState.PickingPoint;
         }
 
-        if (_isPaused)
+        if (_isStopped)
         {
-            return EngineState.Paused;
+            return EngineState.Stopped;
         }
 
         if (!_platform.Permission.IsGranted)
@@ -340,5 +347,5 @@ public sealed class AntiAfkEngine
 
     /// <summary>Во сне Roblox отключится и без всякого кика, поэтому по умолчанию не даём компьютеру уснуть.</summary>
     private void ApplySleepMode() => _platform.Sleep.Apply(
-        _isPaused ? SleepMode.Allow : _settings.KeepAwake ? SleepMode.KeepAwake : SleepMode.AllowButStayResponsive);
+        _isStopped ? SleepMode.Allow : _settings.KeepAwake ? SleepMode.KeepAwake : SleepMode.AllowButStayResponsive);
 }

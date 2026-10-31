@@ -5,7 +5,7 @@ public enum EngineState
     Running,
     Acting,
     PickingPoint,
-    Paused,
+    Stopped,
     WaitingForRoblox,
     PermissionRequired,
 }
@@ -15,9 +15,10 @@ public sealed record EngineSnapshot(
     EngineState State,
     TimeSpan TimeUntilNextAction,
     int ActionsThisRun,
-    TimeSpan Uptime,
+    TimeSpan ActiveTimeThisRun,
     int WindowCount,
     AppSettings Settings,
     AfkStatistics Statistics,
     TimeSpan CurrentSession,
+    SessionRecord? OngoingSession,
     IReadOnlyList<ActivityEntry> Activity);

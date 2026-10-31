@@ -31,7 +31,46 @@
       </Border>
     </Grid>
     <TextBlock Classes="muted small"
-               Text="Считается время, пока Roblox запущен и приложение не на паузе. После паузы или закрытия Roblox начинается новая сессия. Статистика сохраняется между запусками." />
+               Text="Считается время, пока Roblox запущен и приложение включено. После остановки или закрытия Roblox начинается новая сессия. Статистика сохраняется между запусками." />
+
+    <StackPanel Margin="0,10,0,0">
+      <TextBlock Classes="sectionTitle" Text="Сессии" />
+      <TextBlock Classes="muted small" Text="Пока нет сессий. Нажми «Запустить», и здесь появится первая."
+                 IsVisible="{Binding IsListEmpty}" />
+      <StackPanel Spacing="6">
+        <Border Classes="card session running" IsVisible="{Binding HasOngoingSession}">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14">
+            <StackPanel>
+              <TextBlock Classes="strong" Foreground="{StaticResource AccentBrush}" Text="Идёт сейчас" />
+              <TextBlock Classes="muted small" Text="{Binding OngoingSession.Start, FallbackValue=''}" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" Classes="muted small" VerticalAlignment="Center" Text="{Binding OngoingSession.Actions, FallbackValue=''}" />
+            <TextBlock Grid.Column="2" Classes="strong" VerticalAlignment="Center" Text="{Binding OngoingSession.Duration, FallbackValue=''}" />
+          </Grid>
+        </Border>
+        <ItemsControl ItemsSource="{Binding Sessions}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:SessionItem">
+              <Border Classes="card session">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14">
+                  <TextBlock VerticalAlignment="Center" Text="{Binding Start}" />
+                  <TextBlock Grid.Column="1" Classes="muted small" VerticalAlignment="Center" Text="{Binding Actions}" />
+                  <TextBlock Grid.Column="2" Classes="strong" VerticalAlignment="Center" Text="{Binding Duration}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+      <TextBlock Classes="muted small" Margin="0,8,0,0" IsVisible="{Binding HasSessions}"
+                 Text="Хранятся последние 50 сессий. Сессии короче 10 секунд не записываются." />
+    </StackPanel>
+
     <Button HorizontalAlignment="Left" Content="Сбросить статистику" Command="{Binding ResetCommand}" />
   </StackPanel>
 </UserControl>

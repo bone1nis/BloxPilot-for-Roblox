@@ -17,6 +17,18 @@ public static class Texts
         return !teens && last is >= 2 and <= 4 ? $"{count} минуты" : $"{count} минут";
     }
 
+    public static string Actions(int count)
+    {
+        var last = count % 10;
+        var teens = count % 100 is >= 11 and <= 14;
+        if (!teens && last == 1)
+        {
+            return $"{count} действие";
+        }
+
+        return !teens && last is >= 2 and <= 4 ? $"{count} действия" : $"{count} действий";
+    }
+
     public static string Duration(TimeSpan time)
     {
         var hours = (int)time.TotalHours;

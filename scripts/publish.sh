@@ -27,6 +27,7 @@ publish_mac() {
   cp packaging/macos/Info.plist "$bundle/Contents/Info.plist"
   cp packaging/macos/icon.icns "$bundle/Contents/Resources/icon.icns"
   codesign --force --deep --sign - "$bundle"
+  ditto -c -k --keepParent "$bundle" "dist/Roblox-AntiAFK-$folder.zip"
 }
 
 publish_mac osx-arm64 mac-apple-silicon

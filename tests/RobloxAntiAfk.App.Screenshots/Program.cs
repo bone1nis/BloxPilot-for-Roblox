@@ -19,13 +19,31 @@ AppBuilder.Configure<App>()
     .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
     .SetupWithoutStarting();
 
-var sampleStatistics = new AfkStatistics { TotalSeconds = 93725, LongestSessionSeconds = 14400, TotalActions = 412 };
+var sampleDay = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
+var sampleStatistics = new AfkStatistics
+{
+    TotalSeconds = 93725,
+    LongestSessionSeconds = 14400,
+    TotalActions = 412,
+    Sessions =
+    [
+        new SessionRecord(sampleDay.AddHours(-3), 3725, 12),
+        new SessionRecord(sampleDay.AddDays(-1), 14400, 48),
+        new SessionRecord(sampleDay.AddDays(-2).AddHours(3), 1821, 6),
+        new SessionRecord(sampleDay.AddDays(-3), 301, 1),
+    ],
+};
 
-(AntiAfkEngine Engine, TestWorld World) CreateEngine(AppSettings settings, Action<TestWorld>? arrange = null)
+(AntiAfkEngine Engine, TestWorld World) CreateEngine(AppSettings settings, Action<TestWorld>? arrange = null, bool isRunning = true)
 {
     var world = new TestWorld().WithRoblox(TestWorld.First);
     arrange?.Invoke(world);
     var engine = new AntiAfkEngine(world.Platform, world.Clock, new MemoryStore<AppSettings>(settings), new MemoryStore<AfkStatistics>(sampleStatistics));
+    if (isRunning)
+    {
+        engine.ToggleRunning();
+    }
+
     return (engine, world);
 }
 
@@ -47,6 +65,7 @@ runningWorld.Clock.Advance(TimeSpan.FromSeconds(113));
 running.Tick();
 Capture("rules", running, MainTab.Rules);
 Capture("rules-windows", running, MainTab.Rules, isMac: false);
+Capture("statistics-running", running, MainTab.Statistics);
 
 var (walk, walkWorld) = CreateEngine(new AppSettings { Action = AfkAction.Walk, IntervalMinutes = 17 }, w => w.WithRoblox(TestWorld.Second));
 walk.Tick();
@@ -64,9 +83,9 @@ var (picking, _) = CreateEngine(new AppSettings());
 picking.BeginPointPick();
 Capture("settings-picking", picking, MainTab.Settings);
 
-var (paused, _) = CreateEngine(new AppSettings());
-paused.TogglePause();
-Capture("statistics-paused", paused, MainTab.Statistics);
+var (stopped, _) = CreateEngine(new AppSettings(), isRunning: false);
+stopped.Tick();
+Capture("statistics-stopped", stopped, MainTab.Statistics);
 
 var (noPermission, _) = CreateEngine(new AppSettings(), w => w.Permission.IsGranted = false);
 noPermission.Tick();

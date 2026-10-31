@@ -68,6 +68,19 @@ public sealed class SettingsAndGeometryTests : IDisposable
         Assert.True(settings.AllWindows);
     }
 
+    [Fact]
+    public void Statistics_survive_round_trip_and_old_file_has_no_sessions()
+    {
+        var store = new JsonFileStore<AfkStatistics>(_path, () => new AfkStatistics());
+        var start = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.FromHours(3));
+        store.Save(new AfkStatistics { TotalActions = 2, Sessions = [new SessionRecord(start, 90, 2)] });
+
+        Assert.Equal([new SessionRecord(start, 90, 2)], store.Load().Sessions);
+
+        File.WriteAllText(_path, """{ "TotalActions": 7 }""");
+        Assert.Empty(store.Load().Sessions);
+    }
+
     [Theory]
     [InlineData(-5, AppSettings.MinIntervalMinutes)]
     [InlineData(10, 10)]

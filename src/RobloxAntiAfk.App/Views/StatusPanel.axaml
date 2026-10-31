@@ -8,7 +8,7 @@
           BorderBrush="{StaticResource LineBrush}"
           BorderThickness="0,0,1,0"
           Padding="24"
-          Classes.paused="{Binding IsPaused}"
+          Classes.stopped="{Binding IsStopped}"
           Classes.waiting="{Binding IsWaiting}"
           Classes.problem="{Binding IsProblem}">
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="16">
@@ -37,8 +37,9 @@
                 IsVisible="{Binding NeedsPermission}"
                 Command="{Binding OpenPermissionSettingsCommand}" />
         <Button Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch"
-                Content="{Binding PauseText}" IsEnabled="{Binding CanPause}"
-                Command="{Binding TogglePauseCommand}" />
+                Classes.primary="{Binding IsStopped}"
+                Content="{Binding RunButtonText}" IsEnabled="{Binding CanToggleRunning}"
+                Command="{Binding ToggleRunningCommand}" />
         <Button Grid.Row="1" Grid.Column="2" HorizontalAlignment="Stretch"
                 Content="Сделать сейчас" IsEnabled="{Binding CanRunNow}"
                 Command="{Binding RunNowCommand}" />
@@ -53,7 +54,7 @@
         </Border>
         <Border Grid.Column="2" Classes="stat">
           <StackPanel>
-            <TextBlock Text="{Binding Uptime}" FontSize="17" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding ActiveTime}" FontSize="17" FontWeight="SemiBold" />
             <TextBlock Text="время работы" Classes="muted" FontSize="12" />
           </StackPanel>
         </Border>

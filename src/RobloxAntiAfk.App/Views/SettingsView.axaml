@@ -76,7 +76,7 @@
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
           <TextBlock Classes="strong" Text="Не давать компьютеру уснуть" />
-          <TextBlock Classes="muted small" Text="Экран и компьютер не засыпают, пока приложение работает" />
+          <TextBlock Classes="muted small" Text="Экран и компьютер не засыпают, пока приложение запущено" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding KeepAwake}" />
       </Grid>

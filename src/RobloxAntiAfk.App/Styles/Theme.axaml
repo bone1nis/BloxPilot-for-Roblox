@@ -67,6 +67,9 @@
     <Setter Property="Background" Value="{StaticResource WarningBackgroundBrush}" />
     <Setter Property="BorderBrush" Value="{StaticResource WarningLineBrush}" />
   </Style>
+  <Style Selector="Border.session">
+    <Setter Property="Padding" Value="14,9" />
+  </Style>
   <Style Selector="Border.stat">
     <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
     <Setter Property="CornerRadius" Value="10" />
@@ -164,11 +167,11 @@
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
-  <Style Selector="Border.paused Arc.ring">
-    <Setter Property="Stroke" Value="{StaticResource PausedBrush}" />
+  <Style Selector="Border.stopped Arc.ring">
+    <Setter Property="Stroke" Value="{StaticResource MutedBrush}" />
   </Style>
-  <Style Selector="Border.paused TextBlock.stateTitle">
-    <Setter Property="Foreground" Value="{StaticResource PausedBrush}" />
+  <Style Selector="Border.stopped TextBlock.stateTitle">
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
   </Style>
   <Style Selector="Border.waiting Arc.ring">
     <Setter Property="Stroke" Value="{StaticResource WaitingBrush}" />

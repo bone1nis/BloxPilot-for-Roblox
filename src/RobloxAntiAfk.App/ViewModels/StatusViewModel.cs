@@ -23,13 +23,13 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
     [ObservableProperty] private string _timeText = "";
     [ObservableProperty] private bool _showCountdown;
     [ObservableProperty] private double _ringSweep = 360;
-    [ObservableProperty] private string _pauseText = "Пауза";
-    [ObservableProperty] private bool _canPause;
+    [ObservableProperty] private string _runButtonText = "Запустить";
+    [ObservableProperty] private bool _canToggleRunning;
     [ObservableProperty] private bool _canRunNow;
     [ObservableProperty] private bool _needsPermission;
     [ObservableProperty] private string _actionsDone = "0";
-    [ObservableProperty] private string _uptime = "0:00";
-    [ObservableProperty] private bool _isPaused;
+    [ObservableProperty] private string _activeTime = "0:00";
+    [ObservableProperty] private bool _isStopped;
     [ObservableProperty] private bool _isWaiting;
     [ObservableProperty] private bool _isProblem;
     [ObservableProperty] private bool _hasActivity;
@@ -45,7 +45,7 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
         {
             EngineState.Acting => ("Выполняю", "Сейчас вернусь обратно", "Сейчас"),
             EngineState.PickingPoint => ("Выбери точку", "Кликни один раз в окне Roblox", "Точка"),
-            EngineState.Paused => ("На паузе", "Всё остановлено, компьютер может уснуть", "Пауза"),
+            EngineState.Stopped => ("Выключено", "Нажми «Запустить», когда будешь готова", "Выкл"),
             EngineState.WaitingForRoblox => ("Жду Roblox", "Запусти игру, и я начну работать", "Жду"),
             EngineState.PermissionRequired => ("Нужно разрешение", "Без него macOS не даст ничего нажать", "Стоп"),
             _ => ("Работает", RunningSubtitle(snapshot), (string?)null),
@@ -55,22 +55,22 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
         TimeText = word ?? Texts.Duration(RoundUp(snapshot.TimeUntilNextAction));
         RingSweep = word is null ? 360 * snapshot.TimeUntilNextAction / settings.Interval : 360;
 
-        IsPaused = state == EngineState.Paused;
+        IsStopped = state == EngineState.Stopped;
         IsWaiting = state is EngineState.WaitingForRoblox or EngineState.PickingPoint;
         IsProblem = state == EngineState.PermissionRequired;
 
-        PauseText = state == EngineState.Paused ? "Продолжить" : "Пауза";
-        CanPause = state is not (EngineState.Acting or EngineState.PickingPoint);
+        RunButtonText = state == EngineState.Stopped ? "Запустить" : "Остановить";
+        CanToggleRunning = state is not (EngineState.Acting or EngineState.PickingPoint);
         CanRunNow = state == EngineState.Running;
         NeedsPermission = state == EngineState.PermissionRequired;
 
         ActionsDone = snapshot.ActionsThisRun.ToString();
-        Uptime = Texts.Duration(snapshot.Uptime);
+        ActiveTime = Texts.Duration(snapshot.ActiveTimeThisRun);
         ApplyActivity(snapshot.Activity);
     }
 
     [RelayCommand]
-    private void TogglePause() => engine.TogglePause();
+    private void ToggleRunning() => engine.ToggleRunning();
 
     [RelayCommand]
     private void RunNow() => engine.RunNow();
