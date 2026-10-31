@@ -10,6 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\RobloxAntiAfk.Core\RobloxAntiAfk.Core.csproj" />
+    <ProjectReference Include="..\..\src\RobloxAntiAfk.Ocr\RobloxAntiAfk.Ocr.csproj" />
     <ProjectReference Include="..\..\src\RobloxAntiAfk.Platform.Windows\RobloxAntiAfk.Platform.Windows.csproj" />
     <ProjectReference Include="..\..\src\RobloxAntiAfk.Platform.Mac\RobloxAntiAfk.Platform.Mac.csproj" />
   </ItemGroup>

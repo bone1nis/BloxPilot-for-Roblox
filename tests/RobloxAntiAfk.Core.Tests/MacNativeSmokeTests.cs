@@ -26,6 +26,36 @@ public class MacNativeSmokeTests
         Assert.Null(windows.GetBounds(new WindowHandle(int.MaxValue)));
     }
 
+    /// <summary>Сочетание здесь не регистрируется: проверяем только, что нужные функции есть в системе.</summary>
+    [Theory]
+    [InlineData(RobloxAntiAfk.Platform.Mac.Native.Carbon.Library, "GetApplicationEventTarget")]
+    [InlineData(RobloxAntiAfk.Platform.Mac.Native.Carbon.Library, "InstallEventHandler")]
+    [InlineData(RobloxAntiAfk.Platform.Mac.Native.Carbon.Library, "RemoveEventHandler")]
+    [InlineData(RobloxAntiAfk.Platform.Mac.Native.Carbon.Library, "RegisterEventHotKey")]
+    [InlineData(RobloxAntiAfk.Platform.Mac.Native.Carbon.Library, "UnregisterEventHotKey")]
+    [InlineData(RobloxAntiAfk.Platform.Mac.Native.Carbon.Library, "GetEventParameter")]
+    [InlineData("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", "CGPreflightScreenCaptureAccess")]
+    [InlineData("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", "CGRequestScreenCaptureAccess")]
+    [InlineData("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", "CGEventGetFlags")]
+    [InlineData("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", "CGEventGetIntegerValueField")]
+    public void System_exports_new_native_functions(string library, string function)
+    {
+        RequireMac();
+
+        Assert.NotEqual(0, System.Runtime.InteropServices.NativeLibrary.GetExport(System.Runtime.InteropServices.NativeLibrary.Load(library), function));
+    }
+
+    /// <summary>Спрашиваем про собственное приложение: ничего не скрывается и не показывается.</summary>
+    [Fact]
+    public void Reads_hidden_state_of_own_process()
+    {
+        RequireMac();
+
+        var isHidden = new MacWindowManager().IsMinimized(new WindowHandle(Environment.ProcessId));
+
+        Assert.False(isHidden);
+    }
+
     [Fact]
     public void Reads_cursor_position_without_moving_it()
     {
@@ -34,6 +64,17 @@ public class MacNativeSmokeTests
         var cursor = new MacInputSimulator().GetCursor();
 
         Assert.False(double.IsNaN(cursor.X));
+    }
+
+    /// <summary>Запрос разрешения не показывается: это только проверка состояния.</summary>
+    [Fact]
+    public void Reads_screen_permission_state_and_hotkey_labels_differ()
+    {
+        RequireMac();
+        var platform = MacPlatform.Create();
+
+        _ = platform.TextReader.IsPermissionGranted;
+        Assert.NotEqual(platform.Hotkey.Label, platform.TranslationHotkey.Label);
     }
 
     [Fact]

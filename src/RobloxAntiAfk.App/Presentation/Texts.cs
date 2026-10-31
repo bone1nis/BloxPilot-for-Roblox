@@ -41,6 +41,13 @@ public static class Texts
         GameKey.One => "1",
         GameKey.Two => "2",
         GameKey.Three => "3",
+        GameKey.Four => "4",
+        GameKey.Five => "5",
+        GameKey.Six => "6",
+        GameKey.Seven => "7",
+        GameKey.Eight => "8",
+        GameKey.Nine => "9",
+        GameKey.Zero => "0",
         _ => key.ToString(),
     };
 
@@ -51,6 +58,7 @@ public static class Texts
         AfkAction.Key => "Клавиша",
         AfkAction.Walk => "Шаг W → S",
         AfkAction.Zoom => "Зум I → O",
+        AfkAction.Macro => "Свой макрос",
         _ => action.ToString(),
     };
 
@@ -62,6 +70,7 @@ public static class Texts
         AfkAction.Key => "Нажимает выбранную клавишу в окне Roblox.",
         AfkAction.Walk => "Нажимает W, а затем S в окне Roblox.",
         AfkAction.Zoom => "Нажимает I, а затем O в окне Roblox.",
+        AfkAction.Macro => "Повторяет записанные тобой нажатия и движения в окне Roblox.",
         _ when settings.ClickPoint is not null => "Кликает в выбранную точку окна Roblox.",
         _ => "Кликает по центру окна Roblox.",
     };
@@ -76,6 +85,8 @@ public static class Texts
             "Персонаж делает короткий шаг вперёд и назад. Это может помочь в играх со своим таймером, но не гарантия. Рядом с препятствием он может немного сместиться. Если открыт чат, буквы попадут в него.", true),
         AfkAction.Zoom => ("Двигается только камера",
             "Камера немного приближается и отдаляется обратно, персонаж стоит на месте. Если открыт чат, буквы попадут в него.", false),
+        AfkAction.Macro => ("Может задеть игру",
+            "Запись повторяется как есть. Если персонаж стоит в другом месте или открыт чат, результат будет другим. Поворот камеры может повториться неточно.", true),
         _ => ("Не мешает игре",
             "Правый клик не нажимает кнопки, не стреляет и не двигает персонажа. Курсор сразу возвращается на место.", false),
     };
@@ -91,8 +102,52 @@ public static class Texts
         ActivityCode.PointPickFailed => "Не удалось начать выбор точки",
         ActivityCode.RobloxNotRunning => "Сначала запусти Roblox",
         ActivityCode.PermissionMissing => "Сначала выдай разрешение",
+        ActivityCode.CharacterReset => "Персонаж сброшен",
+        ActivityCode.MacroSaved => "Макрос записан",
+        ActivityCode.MacroEmpty => "В окне Roblox ничего не нажато, макрос не изменён",
+        ActivityCode.MacroMissing => "Сначала запиши макрос в настройках",
+        ActivityCode.MacroRecordFailed => "Не удалось начать запись",
+        ActivityCode.RobloxClosed => "Окно Roblox закрылось",
+        ActivityCode.Disconnected => "Roblox отключился от сервера",
+        ActivityCode.Reconnecting => "Захожу в игру снова",
+        ActivityCode.Reconnected => "Снова в игре",
+        ActivityCode.ReconnectGaveUp => "Не получилось зайти за 5 попыток",
         _ => "Что-то пошло не так, попробую в следующий раз",
     };
+
+    public static string TranslationStatusText(TranslationSnapshot snapshot) => snapshot.Status switch
+    {
+        TranslationStatus.Disabled => "Перевод выключен.",
+        TranslationStatus.NeedArea => "Сначала выбери область.",
+        TranslationStatus.Ready => $"Готово. Нажми {snapshot.HotkeyLabel} в игре, когда появится текст.",
+        TranslationStatus.SelectingArea => "Жду, пока ты обведёшь текст.",
+        TranslationStatus.Reading => "Читаю текст...",
+        TranslationStatus.Shown => "Перевод показан рядом с областью.",
+        TranslationStatus.ShownOriginal => "Текст прочитан, но перевод сейчас недоступен. Проверь интернет.",
+        TranslationStatus.NoText => "В выбранной области текст не найден.",
+        TranslationStatus.AreaTooSmall => "Область слишком маленькая, выбери её заново.",
+        TranslationStatus.RobloxMissing => "Сначала запусти Roblox.",
+        TranslationStatus.RobloxNotInFront => "Не удалось вывести Roblox вперёд. Открой его и нажми ещё раз.",
+        TranslationStatus.InputPermissionMissing => "Сначала выдай разрешение «Универсальный доступ».",
+        TranslationStatus.ScreenPermissionMissing => "Нужно разрешение «Запись экрана»: Системные настройки → Конфиденциальность и безопасность → Запись экрана. Включи Roblox AntiAFK и открой приложение заново.",
+        TranslationStatus.EmptyCapture => "Снимок окна получился пустым. Переключи Roblox в оконный режим и попробуй ещё раз.",
+        TranslationStatus.SelectionFailed => "Не удалось начать выбор области.",
+        _ => "Не удалось прочитать текст.",
+    };
+
+    public static bool IsTranslationProblem(TranslationStatus status) => status is not (TranslationStatus.Disabled
+        or TranslationStatus.NeedArea
+        or TranslationStatus.Ready
+        or TranslationStatus.SelectingArea
+        or TranslationStatus.Reading
+        or TranslationStatus.Shown);
+
+    /// <summary>Только то, ради чего стоит написать в Telegram.</summary>
+    public static bool IsWorthNotifying(ActivityCode code) => code is ActivityCode.RobloxClosed
+        or ActivityCode.Disconnected
+        or ActivityCode.Reconnecting
+        or ActivityCode.Reconnected
+        or ActivityCode.ReconnectGaveUp;
 
     private static string ActionDone(ActivityEntry entry)
     {
@@ -102,6 +157,7 @@ public static class Texts
             AfkAction.Key => $"Нажата клавиша {KeyName(entry.Key)}",
             AfkAction.Walk => "Шаг W → S сделан",
             AfkAction.Zoom => "Зум I → O сделан",
+            AfkAction.Macro => "Макрос выполнен",
             _ => "Правый клик сделан",
         };
         return entry.WindowsTotal > 1 ? $"{text} (окон: {entry.WindowsDone} из {entry.WindowsTotal})" : text;

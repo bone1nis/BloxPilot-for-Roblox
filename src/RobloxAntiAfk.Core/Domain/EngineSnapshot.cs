@@ -5,6 +5,7 @@ public enum EngineState
     Running,
     Acting,
     PickingPoint,
+    RecordingMacro,
     Stopped,
     WaitingForRoblox,
     PermissionRequired,
@@ -21,4 +22,10 @@ public sealed record EngineSnapshot(
     AfkStatistics Statistics,
     TimeSpan CurrentSession,
     SessionRecord? OngoingSession,
-    IReadOnlyList<ActivityEntry> Activity);
+    IReadOnlyList<ActivityEntry> Activity)
+{
+    public bool IsHotkeyActive { get; init; }
+    public string HotkeyLabel { get; init; } = "";
+    public bool CanMuteRoblox { get; init; }
+    public TimeSpan RecordingLeft { get; init; }
+}

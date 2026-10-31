@@ -96,14 +96,27 @@ internal sealed class MacWindowManager : IWindowManager
         }
     }
 
-    /// <summary>Свёрнутое окно на Mac просто не имеет границ на экране, движок сообщит об этом пользователю.</summary>
-    public bool IsMinimized(WindowHandle window) => false;
+    /// <summary>
+    /// На Mac окном считается приложение, поэтому здесь это «скрыть приложение», как Cmd+H.
+    /// Окно, свёрнутое в Dock, не имеет границ на экране, движок сообщит об этом пользователю.
+    /// </summary>
+    public bool IsMinimized(WindowHandle window) => WithApp(window, app => ObjC.SendBool(app, "isHidden"));
 
-    public void Restore(WindowHandle window)
-    {
-    }
+    public void Restore(WindowHandle window) => WithApp(window, app => ObjC.Send(app, "unhide") != 0);
 
-    public void Minimize(WindowHandle window)
+    public void Minimize(WindowHandle window) => WithApp(window, app => ObjC.Send(app, "hide") != 0);
+
+    private static bool WithApp(WindowHandle window, Func<nint, bool> use)
     {
+        var pool = ObjC.objc_autoreleasePoolPush();
+        try
+        {
+            var app = ObjC.Send(ObjC.Class("NSRunningApplication"), "runningApplicationWithProcessIdentifier:", window.Value);
+            return app != 0 && use(app);
+        }
+        finally
+        {
+            ObjC.objc_autoreleasePoolPop(pool);
+        }
     }
 }

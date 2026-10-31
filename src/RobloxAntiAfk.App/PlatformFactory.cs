@@ -10,7 +10,11 @@ internal static class PlatformFactory
     {
         if (OperatingSystem.IsWindows())
         {
+#if WINDOWS_OCR
+            return WindowsPlatform.Create(new RobloxAntiAfk.Ocr.RapidTextRecognizer());
+#else
             return WindowsPlatform.Create();
+#endif
         }
 
         if (OperatingSystem.IsMacOS())

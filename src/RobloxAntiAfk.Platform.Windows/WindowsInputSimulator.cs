@@ -22,7 +22,48 @@ internal sealed unsafe class WindowsInputSimulator : IInputSimulator
         [GameKey.Three] = 0x04,
         [GameKey.I] = 0x17,
         [GameKey.O] = 0x18,
+        [GameKey.B] = 0x30,
+        [GameKey.C] = 0x2E,
+        [GameKey.G] = 0x22,
+        [GameKey.H] = 0x23,
+        [GameKey.J] = 0x24,
+        [GameKey.K] = 0x25,
+        [GameKey.L] = 0x26,
+        [GameKey.M] = 0x32,
+        [GameKey.N] = 0x31,
+        [GameKey.P] = 0x19,
+        [GameKey.T] = 0x14,
+        [GameKey.U] = 0x16,
+        [GameKey.V] = 0x2F,
+        [GameKey.X] = 0x2D,
+        [GameKey.Y] = 0x15,
+        [GameKey.Z] = 0x2C,
+        [GameKey.Four] = 0x05,
+        [GameKey.Five] = 0x06,
+        [GameKey.Six] = 0x07,
+        [GameKey.Seven] = 0x08,
+        [GameKey.Eight] = 0x09,
+        [GameKey.Nine] = 0x0A,
+        [GameKey.Zero] = 0x0B,
+        [GameKey.Escape] = 0x01,
+        [GameKey.Enter] = 0x1C,
+        [GameKey.Tab] = 0x0F,
+        [GameKey.Backspace] = 0x0E,
+        [GameKey.Shift] = 0x2A,
+        [GameKey.Control] = 0x1D,
+        [GameKey.Up] = 0x48,
+        [GameKey.Down] = 0x50,
+        [GameKey.Left] = 0x4B,
+        [GameKey.Right] = 0x4D,
     };
+
+    /// <summary>У стрелок такие же коды, как у цифрового блока, отличает их только признак расширенной клавиши.</summary>
+    private static readonly HashSet<GameKey> ExtendedKeys = [GameKey.Up, GameKey.Down, GameKey.Left, GameKey.Right];
+
+    private static readonly Dictionary<ushort, GameKey> KeysByScanCode = ScanCodes.ToDictionary(pair => pair.Value, pair => pair.Key);
+
+    internal static bool TryGetKey(ushort scanCode, bool isExtended, out GameKey key) =>
+        KeysByScanCode.TryGetValue(scanCode, out key) && (isExtended || !ExtendedKeys.Contains(key));
 
     public ScreenPoint GetCursor()
     {
@@ -54,7 +95,9 @@ internal sealed unsafe class WindowsInputSimulator : IInputSimulator
                 Keyboard = new KeyboardInput
                 {
                     ScanCode = ScanCodes[key],
-                    Flags = NativeMethods.KeyEventScanCode | (isDown ? 0 : NativeMethods.KeyEventUp),
+                    Flags = NativeMethods.KeyEventScanCode
+                        | (isDown ? 0 : NativeMethods.KeyEventUp)
+                        | (ExtendedKeys.Contains(key) ? NativeMethods.KeyEventExtended : 0),
                 },
             },
         };

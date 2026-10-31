@@ -45,6 +45,20 @@ jobs:
           Write-Host "Приложение работает, заголовок окна: '$($app.MainWindowTitle)'"
           Stop-Process -Id $app.Id -Force
 
+      # Распознавание в собранном exe на настоящей Windows. Сбой распознавания роняет сборку,
+      # а снимок и подпись зависят от рабочего стола машины, поэтому только выводят предупреждение.
+      - name: Проверка перевода
+        shell: pwsh
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP "self-test.txt"
+          $app = Start-Process -FilePath "dist\RobloxAntiAFK.exe" -ArgumentList "--self-test=$report" -PassThru -Wait
+          if (Test-Path $report) { Get-Content $report } else { Write-Host "Отчёта нет" }
+          if ((Test-Path $report) -and (Select-String -Path $report -Pattern "^WARN" -Quiet)) { Write-Host "::warning::Снимок или подпись не прошли проверку, смотри отчёт выше" }
+          if ($app.ExitCode -ne 0) {
+            Write-Error "Проверка перевода не прошла, код выхода: $($app.ExitCode)"
+            exit 1
+          }
+
       - uses: actions/upload-artifact@v7
         with:
           name: roblox-antiafk-windows

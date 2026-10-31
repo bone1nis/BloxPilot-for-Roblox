@@ -45,6 +45,7 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
         {
             EngineState.Acting => ("Выполняю", "Сейчас вернусь обратно", "Сейчас"),
             EngineState.PickingPoint => ("Выбери точку", "Кликни один раз в окне Roblox", "Точка"),
+            EngineState.RecordingMacro => ("Идёт запись", RecordingSubtitle(snapshot), "Запись"),
             EngineState.Stopped => ("Выключено", "Нажми «Запустить», когда будешь готова", "Выкл"),
             EngineState.WaitingForRoblox => ("Жду Roblox", "Запусти игру, и я начну работать", "Жду"),
             EngineState.PermissionRequired => ("Нужно разрешение", "Без него macOS не даст ничего нажать", "Стоп"),
@@ -56,11 +57,11 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
         RingSweep = word is null ? 360 * snapshot.TimeUntilNextAction / settings.Interval : 360;
 
         IsStopped = state == EngineState.Stopped;
-        IsWaiting = state is EngineState.WaitingForRoblox or EngineState.PickingPoint;
+        IsWaiting = state is EngineState.WaitingForRoblox or EngineState.PickingPoint or EngineState.RecordingMacro;
         IsProblem = state == EngineState.PermissionRequired;
 
         RunButtonText = state == EngineState.Stopped ? "Запустить" : "Остановить";
-        CanToggleRunning = state is not (EngineState.Acting or EngineState.PickingPoint);
+        CanToggleRunning = state is not (EngineState.Acting or EngineState.PickingPoint or EngineState.RecordingMacro);
         CanRunNow = state == EngineState.Running;
         NeedsPermission = state == EngineState.PermissionRequired;
 
@@ -83,6 +84,9 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
         var text = $"{Texts.ActionSummary(snapshot.Settings)} раз в {Texts.Minutes(snapshot.Settings.IntervalMinutes)}";
         return snapshot.WindowCount > 1 ? $"{text} · окон: {snapshot.WindowCount}" : text;
     }
+
+    private static string RecordingSubtitle(EngineSnapshot snapshot) =>
+        $"Действуй в окне Roblox, осталось {Texts.Duration(RoundUp(snapshot.RecordingLeft))}";
 
     private static TimeSpan RoundUp(TimeSpan time) => TimeSpan.FromSeconds(Math.Ceiling(time.TotalSeconds));
 

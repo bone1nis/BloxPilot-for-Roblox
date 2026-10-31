@@ -1,10 +1,14 @@
+using System.Diagnostics;
+using System.Runtime.Versioning;
 using RobloxAntiAfk.Core.Abstractions;
+using RobloxAntiAfk.Core.Services;
 
 namespace RobloxAntiAfk.Platform.Windows;
 
 public static class WindowsPlatform
 {
-    public static PlatformServices Create()
+    [SupportedOSPlatform("windows")]
+    public static PlatformServices Create(ITextRecognizer? recognizer = null)
     {
         var input = new WindowsInputSimulator();
         return new PlatformServices(
@@ -14,6 +18,16 @@ public static class WindowsPlatform
             new WindowsSleepBlocker(),
             new NoPermissionRequired(),
             new WindowsMouseCapture(),
+            new WindowsInputRecorder(),
+            new WindowsHotkey(1, NativeMethods.VirtualKeyF8, "Ctrl+Shift+F8"),
+            new WindowsAutoStart(),
+            new WindowsAudio(),
+            new WindowsLauncher(),
+            new RobloxLogWatcher(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "logs")),
+            new WindowsHotkey(2, NativeMethods.VirtualKeyF9, "Ctrl+Shift+F9"),
+            new WindowsScreenTextReader(recognizer),
+            new WindowsOverlaySupport(),
             WindowSettleDelay: TimeSpan.FromMilliseconds(500));
     }
 
@@ -43,6 +57,12 @@ public static class WindowsPlatform
 
             NativeMethods.SetThreadExecutionState(flags);
         }
+    }
+
+    private sealed class WindowsLauncher : IRobloxLauncher
+    {
+        public void Open(string launchUri) =>
+            Process.Start(new ProcessStartInfo(launchUri) { UseShellExecute = true })?.Dispose();
     }
 
     private sealed class NoPermissionRequired : IInputPermission

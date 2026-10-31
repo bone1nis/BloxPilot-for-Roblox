@@ -11,7 +11,7 @@ public class ActionRunnerTests
         var world = new TestWorld().WithRoblox(TestWorld.First);
         arrange?.Invoke(world);
         var runner = new ActionRunner(world.Platform, world.Clock);
-        var outcome = await runner.RunAsync(world.Windows.Roblox, settings);
+        var outcome = await runner.RunAsync(world.Windows.Roblox, settings, cancellation: TestContext.Current.CancellationToken);
         return (world, outcome);
     }
 
@@ -110,7 +110,7 @@ public class ActionRunnerTests
         world.Windows.Foreground = TestWorld.First;
         world.Idle.TimeSinceLastInput = TimeSpan.FromSeconds(10);
 
-        var outcome = await new ActionRunner(world.Platform, world.Clock).RunAsync(world.Windows.Roblox, new AppSettings());
+        var outcome = await new ActionRunner(world.Platform, world.Clock).RunAsync(world.Windows.Roblox, new AppSettings(), cancellation: TestContext.Current.CancellationToken);
 
         Assert.Equal(1, outcome.WindowsDone);
         Assert.Equal(2, outcome.WindowsTotal);

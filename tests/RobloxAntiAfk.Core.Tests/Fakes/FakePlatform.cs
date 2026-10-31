@@ -1,5 +1,6 @@
 using RobloxAntiAfk.Core.Abstractions;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Services;
 using RobloxAntiAfk.Core.Storage;
 
 namespace RobloxAntiAfk.Core.Tests.Fakes;
@@ -107,6 +108,8 @@ public sealed class FakePermission : IInputPermission
 public sealed class FakeCapture : IMouseCapture
 {
     private Func<ScreenPoint, bool>? _handler;
+    private Action<ScreenPoint>? _onMove;
+    private Action<ScreenPoint>? _onUp;
 
     public bool CanStart { get; set; } = true;
     public bool IsActive => _handler is not null;
@@ -122,9 +125,183 @@ public sealed class FakeCapture : IMouseCapture
         return true;
     }
 
-    public void Stop() => _handler = null;
+    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp)
+    {
+        if (!Start(onMouseDown))
+        {
+            return false;
+        }
+
+        _onMove = onMouseMove;
+        _onUp = onMouseUp;
+        return true;
+    }
+
+    public void Stop()
+    {
+        _handler = null;
+        _onMove = null;
+        _onUp = null;
+    }
 
     public bool Click(ScreenPoint point) => _handler?.Invoke(point) ?? false;
+
+    public bool Drag(ScreenPoint from, ScreenPoint to)
+    {
+        if (!Click(from))
+        {
+            return false;
+        }
+
+        _onMove?.Invoke(to);
+        var onUp = _onUp;
+        Stop();
+        onUp?.Invoke(to);
+        return true;
+    }
+}
+
+public sealed class FakeRecorder : IInputRecorder
+{
+    private Action<RawInputEvent>? _handler;
+
+    public bool CanStart { get; set; } = true;
+    public bool IsActive => _handler is not null;
+
+    public bool Start(Action<RawInputEvent> onInput)
+    {
+        if (!CanStart)
+        {
+            return false;
+        }
+
+        _handler = onInput;
+        return true;
+    }
+
+    public void Stop() => _handler = null;
+
+    public void Emit(RawInputEvent input) => _handler?.Invoke(input);
+}
+
+public sealed class FakeHotkey(string label = "Ctrl+Shift+F8") : IGlobalHotkey
+{
+    private Action? _handler;
+
+    public bool CanStart { get; set; } = true;
+    public string Label => label;
+
+    public bool Start(Action onPressed)
+    {
+        if (!CanStart)
+        {
+            return false;
+        }
+
+        _handler = onPressed;
+        return true;
+    }
+
+    public void Stop() => _handler = null;
+
+    public void Press() => _handler?.Invoke();
+}
+
+public sealed class FakeTextReader : IScreenTextReader
+{
+    public bool IsPermissionGranted { get; set; } = true;
+    public int PermissionRequests { get; private set; }
+    public List<ScreenRect> Reads { get; } = [];
+    public TextReadResult Result { get; set; } = new(TextReadStatus.Success, []);
+
+    public void RequestPermission() => PermissionRequests++;
+
+    public void OpenPermissionSettings()
+    {
+    }
+
+    public Task<TextReadResult> ReadAsync(ScreenRect area, CancellationToken cancellation)
+    {
+        Reads.Add(area);
+        return Task.FromResult(Result);
+    }
+}
+
+public sealed class FakeOverlay : ITranslationOverlay
+{
+    public ScreenRect? Selection { get; private set; }
+    public string? Text { get; private set; }
+    public bool IsError { get; private set; }
+    public ScreenRect? Window { get; private set; }
+    public int Hides { get; private set; }
+    public ScreenRect PanelToReturn { get; set; } = new(0, 0, 1, 1);
+
+    public void ShowSelection(ScreenRect area) => Selection = area;
+
+    public ScreenRect ShowText(ScreenRect area, ScreenRect window, string text, bool isError)
+    {
+        Text = text;
+        IsError = isError;
+        Window = window;
+        return PanelToReturn;
+    }
+
+    public void Hide()
+    {
+        Hides++;
+        Selection = null;
+        Text = null;
+    }
+}
+
+public sealed class FakeOverlaySupport : IOverlaySupport
+{
+    public void Prepare(nint handle, bool aboveFullScreen)
+    {
+    }
+
+    public void Release()
+    {
+    }
+
+    public bool IsClickThrough(nint handle, ScreenPoint point) => true;
+}
+
+public sealed class FakeAutoStart : IAutoStart
+{
+    public List<bool> Applied { get; } = [];
+
+    public void Apply(bool isEnabled) => Applied.Add(isEnabled);
+}
+
+public sealed class FakeAudio : IRobloxAudio
+{
+    public bool IsSupported { get; set; } = true;
+    public List<bool> Calls { get; } = [];
+
+    public void SetMuted(IReadOnlyList<WindowHandle> windows, bool isMuted) => Calls.Add(isMuted);
+}
+
+public sealed class FakeLauncher : IRobloxLauncher
+{
+    public List<string> Opened { get; } = [];
+
+    public void Open(string launchUri) => Opened.Add(launchUri);
+}
+
+public sealed class FakeDisconnects : IDisconnectWatcher
+{
+    public int Arms { get; private set; }
+    public bool IsDisconnected { get; set; }
+
+    public void Arm() => Arms++;
+
+    public bool Poll()
+    {
+        var result = IsDisconnected;
+        IsDisconnected = false;
+        return result;
+    }
 }
 
 public sealed class MemoryStore<T>(T initial) : IDataStore<T>
@@ -155,9 +332,18 @@ public sealed class TestWorld
     public FakeSleep Sleep { get; } = new();
     public FakePermission Permission { get; } = new();
     public FakeCapture Capture { get; } = new();
+    public FakeRecorder Recorder { get; } = new();
+    public FakeHotkey Hotkey { get; } = new();
+    public FakeAutoStart AutoStart { get; } = new();
+    public FakeAudio Audio { get; } = new();
+    public FakeLauncher Launcher { get; } = new();
+    public FakeDisconnects Disconnects { get; } = new();
+    public FakeHotkey TranslationHotkey { get; } = new("Ctrl+Shift+F9");
+    public FakeTextReader TextReader { get; } = new();
 
     public PlatformServices Platform =>
-        new(Windows, Input, Idle, Sleep, Permission, Capture, TimeSpan.FromMilliseconds(500));
+        new(Windows, Input, Idle, Sleep, Permission, Capture, Recorder, Hotkey, AutoStart, Audio, Launcher, Disconnects,
+            TranslationHotkey, TextReader, new FakeOverlaySupport(), TimeSpan.FromMilliseconds(500));
 
     public TestWorld WithRoblox(params WindowHandle[] windows)
     {

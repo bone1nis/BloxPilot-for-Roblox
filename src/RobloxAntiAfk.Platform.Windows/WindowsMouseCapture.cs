@@ -15,8 +15,15 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
     private nint _hook;
     private bool _swallowMouseUp;
     private Func<ScreenPoint, bool>? _onMouseDown;
+    private Action<ScreenPoint>? _onMouseMove;
+    private Action<ScreenPoint>? _onMouseUp;
 
-    public bool Start(Func<ScreenPoint, bool> onMouseDown)
+    public bool Start(Func<ScreenPoint, bool> onMouseDown) => Install(onMouseDown, null, null);
+
+    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp) =>
+        Install(onMouseDown, onMouseMove, onMouseUp);
+
+    private bool Install(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint>? onMouseMove, Action<ScreenPoint>? onMouseUp)
     {
         Stop();
         var module = NativeMethods.GetModuleHandle(0);
@@ -27,6 +34,8 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
         }
 
         _onMouseDown = onMouseDown;
+        _onMouseMove = onMouseMove;
+        _onMouseUp = onMouseUp;
         _active = this;
         return true;
     }
@@ -40,6 +49,8 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
         }
 
         _onMouseDown = null;
+        _onMouseMove = null;
+        _onMouseUp = null;
         _swallowMouseUp = false;
         if (_active == this)
         {
@@ -75,9 +86,19 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
             return _swallowMouseUp;
         }
 
+        if (message == NativeMethods.MessageMouseMove && _swallowMouseUp && _onMouseMove is { } onMove)
+        {
+            NativeMethods.GetCursorPos(out var cursor);
+            onMove(new ScreenPoint(cursor.X, cursor.Y));
+            return false;
+        }
+
         if (message == NativeMethods.MessageLeftButtonUp && _swallowMouseUp)
         {
+            var onUp = _onMouseUp;
+            NativeMethods.GetCursorPos(out var cursor);
             Stop();
+            onUp?.Invoke(new ScreenPoint(cursor.X, cursor.Y));
             return true;
         }
 

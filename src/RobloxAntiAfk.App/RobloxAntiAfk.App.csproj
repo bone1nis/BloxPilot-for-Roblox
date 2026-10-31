@@ -6,6 +6,13 @@
     <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
+  <!-- В сборку для Mac распознавание для Windows не входит: там его заменяет Vision из самой macOS. -->
+  <PropertyGroup Condition="!$(RuntimeIdentifier.StartsWith('osx'))">
+    <DefineConstants>$(DefineConstants);WINDOWS_OCR</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="!$(RuntimeIdentifier.StartsWith('osx'))">
+    <ProjectReference Include="..\RobloxAntiAfk.Ocr\RobloxAntiAfk.Ocr.csproj" />
+  </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets/icon.png" />
   </ItemGroup>

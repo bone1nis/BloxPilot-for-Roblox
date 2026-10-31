@@ -7,8 +7,10 @@ public enum AfkAction
     Key,
     Walk,
     Zoom,
+    Macro,
 }
 
+/// <summary>Новые клавиши добавляются в конец: настройки хранят названия, но порядок удобнее не менять.</summary>
 public enum GameKey
 {
     Space,
@@ -25,6 +27,39 @@ public enum GameKey
     Three,
     I,
     O,
+    B,
+    C,
+    G,
+    H,
+    J,
+    K,
+    L,
+    M,
+    N,
+    P,
+    T,
+    U,
+    V,
+    X,
+    Y,
+    Z,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Zero,
+    Escape,
+    Enter,
+    Tab,
+    Backspace,
+    Shift,
+    Control,
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
 public enum MouseButton

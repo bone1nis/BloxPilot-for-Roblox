@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using RobloxAntiAfk.Core.Abstractions;
+using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Services;
 using RobloxAntiAfk.Platform.Mac.Native;
 
 namespace RobloxAntiAfk.Platform.Mac;
@@ -16,8 +18,33 @@ public static class MacPlatform
             new MacSleepBlocker(),
             new MacInputPermission(),
             new MacMouseCapture(),
+            new MacInputRecorder(),
+            new MacHotkey(1, MacHotkey.KeyCodeA, "Control+Option+A"),
+            new MacAutoStart(),
+            new NoAudioControl(),
+            new MacLauncher(),
+            new RobloxLogWatcher(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Logs", "Roblox")),
+            new MacHotkey(2, MacHotkey.KeyCodeT, "Control+Option+T"),
+            new MacScreenTextReader(),
+            new MacOverlaySupport(),
             // Если Roblox на весь экран, macOS показывает анимацию перехода.
             WindowSettleDelay: TimeSpan.FromSeconds(1));
+    }
+
+    /// <summary>У macOS нет общего способа выключить звук одного приложения.</summary>
+    private sealed class NoAudioControl : IRobloxAudio
+    {
+        public bool IsSupported => false;
+
+        public void SetMuted(IReadOnlyList<WindowHandle> windows, bool isMuted)
+        {
+        }
+    }
+
+    private sealed class MacLauncher : IRobloxLauncher
+    {
+        public void Open(string launchUri) => Process.Start("open", [launchUri])?.Dispose();
     }
 
     private sealed class MacIdleMonitor : IIdleMonitor

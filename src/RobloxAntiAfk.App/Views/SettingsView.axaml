@@ -52,6 +52,23 @@
       </StackPanel>
     </Border>
 
+    <Border Classes="card" IsVisible="{Binding ShowMacro}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Макрос" />
+        <Button HorizontalAlignment="Left" Content="{Binding MacroButtonText}"
+                IsEnabled="{Binding CanUseMacroButton}" Command="{Binding MacroButtonCommand}" />
+        <TextBlock Classes="muted small" Text="{Binding MacroHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Сбрасывать персонажа" />
+        <ItemsControl ItemsSource="{Binding ResetChoices}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
+        <TextBlock Classes="muted small warning" Text="Нажимает Esc, R и Enter вместе с очередным действием. Персонаж вернётся на точку появления. Если в игре сброс запрещён, меню может остаться открытым." />
+      </StackPanel>
+    </Border>
+
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
@@ -80,6 +97,85 @@
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding KeepAwake}" />
       </Grid>
+    </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Прятать Roblox между действиями" />
+          <TextBlock Classes="muted small" Text="Окно будет свёрнуто и покажется только на время действия. Окно, в котором ты сейчас, не прячется" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding HideBetweenActions}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding ShowMute}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Выключить звук Roblox" />
+          <TextBlock Classes="muted small" Text="Звук выключается, пока приложение запущено, и возвращается после остановки" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding MuteRoblox}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel Spacing="8">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+          <TextBlock Classes="strong" VerticalAlignment="Center" Text="Заходить обратно после отключения" />
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding ReconnectEnabled}" />
+        </Grid>
+        <TextBox PlaceholderText="Ссылка на игру или приватный сервер" Text="{Binding GameLink}" />
+        <TextBlock Classes="muted small" Classes.warning="{Binding IsReconnectLinkBad}" Text="{Binding ReconnectHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Уведомления в Telegram" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <TextBox PlaceholderText="Токен бота" PasswordChar="•" Text="{Binding TelegramToken}" />
+          <Button Grid.Column="1" Content="Подключить" IsEnabled="{Binding CanConnectTelegram}" Command="{Binding ConnectTelegramCommand}" />
+        </Grid>
+        <TextBlock Classes="muted small" Text="{Binding TelegramHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Прятать в трей при закрытии" />
+          <TextBlock Classes="muted small" Text="Крестик не выключает приложение, а убирает его к значку. Выйти можно через меню значка" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Открывать вместе с системой" />
+          <TextBlock Classes="muted small" Text="Приложение откроется после входа в систему" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding StartWithSystem}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Запускать сразу при открытии" />
+          <TextBlock Classes="muted small" Text="Не ждать кнопки «Запустить». По умолчанию приложение открывается выключенным" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding RunOnOpen}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel>
+        <TextBlock Classes="strong" Text="Горячая клавиша" />
+        <TextBlock Classes="muted small" Text="{Binding HotkeyHint}" />
+      </StackPanel>
     </Border>
 
     <Button HorizontalAlignment="Left" Margin="0,6,0,0" Content="Вернуть по умолчанию" Command="{Binding ResetToDefaultsCommand}" />

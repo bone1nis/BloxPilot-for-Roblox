@@ -1,0 +1,20 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RobloxAntiAfk.App.Views.OverlayWindow"
+        Title="Roblox AntiAFK: перевод"
+        WindowDecorations="None"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        CanResize="False"
+        Focusable="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        WindowStartupLocation="Manual">
+  <Panel>
+    <Border x:Name="Frame" IsVisible="False" BorderThickness="2" BorderBrush="#4DA3FF" Background="#264DA3FF" />
+    <Border x:Name="Card" IsVisible="False" VerticalAlignment="Top" CornerRadius="10" Padding="14,10" Background="#F0111622">
+      <TextBlock x:Name="Message" TextWrapping="Wrap" FontSize="15" LineHeight="21" Foreground="White" />
+    </Border>
+  </Panel>
+</Window>

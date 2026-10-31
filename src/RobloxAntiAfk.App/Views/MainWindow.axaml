@@ -6,7 +6,7 @@
         x:DataType="vm:MainViewModel"
         Title="Roblox AntiAFK"
         Icon="/Assets/icon.png"
-        Width="820" Height="620"
+        Width="900" Height="620"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
   <Grid ColumnDefinitions="340,*">
@@ -24,6 +24,9 @@
           <Button Classes="tab" Classes.active="{Binding IsStatisticsTab}"
                   Content="Статистика"
                   Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Statistics}" />
+          <Button Classes="tab" Classes.active="{Binding IsTranslationTab}"
+                  Content="Перевод"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Translation}" />
         </StackPanel>
       </Border>
 
@@ -37,6 +40,9 @@
           </Panel>
           <Panel IsVisible="{Binding IsStatisticsTab}">
             <views:StatisticsView DataContext="{Binding Statistics}" />
+          </Panel>
+          <Panel IsVisible="{Binding IsTranslationTab}">
+            <views:TranslationView DataContext="{Binding Translation}" />
           </Panel>
         </Panel>
       </ScrollViewer>

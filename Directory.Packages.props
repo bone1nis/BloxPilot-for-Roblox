@@ -11,6 +11,8 @@
     <PackageVersion Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="RapidOcrNet" Version="4.2.0" />
+    <PackageVersion Include="ThinkGeo.Dependency.MicrosoftVisualCRunTime140" Version="14.5.4" />
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
   </ItemGroup>
 </Project>

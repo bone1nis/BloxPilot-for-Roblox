@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
+             x:Class="RobloxAntiAfk.App.Views.TranslationView"
+             x:DataType="vm:TranslationViewModel">
+  <StackPanel Spacing="8">
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Переводить текст из игры" />
+          <TextBlock Classes="muted small" Text="Читает выбранную часть экрана и показывает русский текст рядом с ней. В Roblox ничего не внедряется" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsEnabled}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding IsEnabled}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Где читать" />
+        <WrapPanel>
+          <Button Content="{Binding AreaButtonText}" Command="{Binding AreaButtonCommand}" Margin="0,0,8,0" />
+          <Button Content="{Binding TranslateButtonText}" IsEnabled="{Binding CanTranslate}" Command="{Binding TranslateButtonCommand}" />
+        </WrapPanel>
+        <TextBlock Classes="muted small" Text="{Binding AreaHint}" />
+        <TextBlock Classes="muted small" Classes.warning="{Binding IsStatusWarning}" Text="{Binding StatusText}" />
+        <TextBlock Classes="muted small" IsVisible="{Binding HasDetail}" Text="{Binding Detail}" />
+        <Button HorizontalAlignment="Left" IsVisible="{Binding ShowPermission}" Content="Открыть настройки macOS" Command="{Binding OpenPermissionSettingsCommand}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding HasResult}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Последний перевод" />
+        <SelectableTextBlock TextWrapping="Wrap" Text="{Binding TranslatedText}" />
+        <SelectableTextBlock Classes="muted small" TextWrapping="Wrap" Text="{Binding SourceText}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding IsEnabled}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel>
+          <TextBlock Classes="strong" Text="Обновлять самому" />
+          <TextBlock Classes="muted small" Text="Пока перевод показан, область читается раз в 2 секунды. В сервис текст уходит, только когда меняется" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoRefresh}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding IsEnabled}">
+      <StackPanel>
+        <TextBlock Classes="strong" Text="Горячая клавиша" />
+        <TextBlock Classes="muted small" Text="{Binding HotkeyHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding IsEnabled}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="Ключ DeepL, если есть" />
+        <TextBox PlaceholderText="Необязательно" PasswordChar="•" Text="{Binding DeepLKey}" />
+        <TextBlock Classes="muted small" Text="Без ключа работают бесплатные сервисы: Google Translate и MyMemory. У Google это неофициальный адрес, он может перестать отвечать. Ключ хранится на этом компьютере в файле настроек." />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card" IsVisible="{Binding IsEnabled}">
+      <StackPanel Spacing="4">
+        <TextBlock Classes="strong" Text="Что уходит в интернет" />
+        <TextBlock Classes="muted small" Text="Только распознанный текст, снимки остаются на компьютере. Если в области окажется чат или ник, они тоже уйдут в сервис перевода. Экран читается, только пока Roblox на переднем плане." />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

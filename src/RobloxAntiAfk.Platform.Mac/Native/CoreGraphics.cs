@@ -25,6 +25,14 @@ internal static unsafe partial class CoreGraphics
     public const uint EventRightMouseDown = 3;
     public const uint EventRightMouseUp = 4;
     public const uint EventMouseMoved = 5;
+    public const uint EventLeftMouseDragged = 6;
+    public const uint EventRightMouseDragged = 7;
+    public const uint EventKeyDown = 10;
+    public const uint EventKeyUp = 11;
+    public const uint EventFlagsChanged = 12;
+    public const int KeyboardKeyCodeField = 9;
+    public const ulong FlagShift = 0x20000;
+    public const ulong FlagControl = 0x40000;
     public const uint EventTapDisabledByTimeout = 0xFFFFFFFE;
     public const uint EventTapDisabledByUserInput = 0xFFFFFFFF;
     public const uint AnyInputEvent = uint.MaxValue;
@@ -39,6 +47,12 @@ internal static unsafe partial class CoreGraphics
     public const uint WindowListExcludeDesktopElements = 16;
 
     private const string Library = "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics";
+
+    [LibraryImport(Library)]
+    public static partial byte CGPreflightScreenCaptureAccess();
+
+    [LibraryImport(Library)]
+    public static partial byte CGRequestScreenCaptureAccess();
 
     [LibraryImport(Library)]
     public static partial nint CGWindowListCopyWindowInfo(uint options, uint relativeToWindow);
@@ -63,6 +77,12 @@ internal static unsafe partial class CoreGraphics
 
     [LibraryImport(Library)]
     public static partial void CGEventPost(int tap, nint cgEvent);
+
+    [LibraryImport(Library)]
+    public static partial ulong CGEventGetFlags(nint cgEvent);
+
+    [LibraryImport(Library)]
+    public static partial long CGEventGetIntegerValueField(nint cgEvent, int field);
 
     [LibraryImport(Library)]
     public static partial nint CGEventTapCreate(

@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/RobloxAntiAfk.App/RobloxAntiAfk.App.csproj" />
     <Project Path="src/RobloxAntiAfk.Core/RobloxAntiAfk.Core.csproj" />
+    <Project Path="src/RobloxAntiAfk.Ocr/RobloxAntiAfk.Ocr.csproj" />
     <Project Path="src/RobloxAntiAfk.Platform.Mac/RobloxAntiAfk.Platform.Mac.csproj" />
     <Project Path="src/RobloxAntiAfk.Platform.Windows/RobloxAntiAfk.Platform.Windows.csproj" />
   </Folder>

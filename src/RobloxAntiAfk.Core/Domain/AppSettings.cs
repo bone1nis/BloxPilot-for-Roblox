@@ -9,6 +9,8 @@ public sealed record AppSettings
     /// <summary>Roblox обычно кикает примерно через 20 минут, поэтому интервал должен быть меньше.</summary>
     public const int MaxIntervalMinutes = 19;
 
+    public static readonly IReadOnlyList<int> ResetChoices = [0, 15, 30, 60];
+
     public int IntervalMinutes { get; init; } = 5;
     public AfkAction Action { get; init; } = AfkAction.RightClick;
     public GameKey Key { get; init; } = GameKey.Space;
@@ -16,6 +18,23 @@ public sealed record AppSettings
     public bool AllWindows { get; init; } = true;
     public bool SkipWhilePlaying { get; init; } = true;
     public bool KeepAwake { get; init; } = true;
+
+    /// <summary>0 значит, что сброс выключен.</summary>
+    public int ResetMinutes { get; init; }
+    public Macro? Macro { get; init; }
+    public bool HideBetweenActions { get; init; }
+    public bool MuteRoblox { get; init; }
+    public bool CloseToTray { get; init; }
+    public bool StartWithSystem { get; init; }
+    public bool RunOnOpen { get; init; }
+    public bool ReconnectEnabled { get; init; }
+    public string GameLink { get; init; } = "";
+    public string TelegramToken { get; init; } = "";
+    public string TelegramChatId { get; init; } = "";
+    public bool TranslationEnabled { get; init; }
+    public WindowArea? TranslationArea { get; init; }
+    public bool TranslationAutoRefresh { get; init; }
+    public string DeepLKey { get; init; } = "";
 
     [JsonIgnore]
     public TimeSpan Interval => TimeSpan.FromMinutes(IntervalMinutes);
@@ -27,5 +46,22 @@ public sealed record AppSettings
     {
         IntervalMinutes = Math.Clamp(IntervalMinutes, MinIntervalMinutes, MaxIntervalMinutes),
         ClickPoint = ClickPoint?.Clamped(),
+        ResetMinutes = ResetChoices.Contains(ResetMinutes) ? ResetMinutes : 0,
+        GameLink = GameLink ?? "",
+        TelegramToken = (TelegramToken ?? "").Trim(),
+        TelegramChatId = TelegramChatId ?? "",
+        TranslationArea = TranslationArea?.Clamped(),
+        DeepLKey = (DeepLKey ?? "").Trim(),
+    };
+
+    /// <summary>Сброс настроек не должен стирать то, что нельзя вернуть одной кнопкой.</summary>
+    public AppSettings ToDefaultsKeepingUserData() => new()
+    {
+        Macro = Macro,
+        GameLink = GameLink,
+        TelegramToken = TelegramToken,
+        TelegramChatId = TelegramChatId,
+        TranslationArea = TranslationArea,
+        DeepLKey = DeepLKey,
     };
 }

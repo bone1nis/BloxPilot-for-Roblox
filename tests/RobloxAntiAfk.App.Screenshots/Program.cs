@@ -47,10 +47,22 @@ var sampleStatistics = new AfkStatistics
     return (engine, world);
 }
 
-void Capture(string name, AntiAfkEngine engine, MainTab tab, bool isMac = true)
+ScreenTranslator CreateTranslator(AntiAfkEngine engine, TestWorld world) => new(
+    world.Platform,
+    engine,
+    new FakeOverlay(),
+    (_, _, _) => Task.FromResult<string?>("Поговори с торговцем, чтобы купить новый меч"),
+    world.Clock);
+
+void Capture(string name, AntiAfkEngine engine, MainTab tab, bool isMac = true, double? height = null, ScreenTranslator? translator = null)
 {
-    var viewModel = new MainViewModel(engine, isMac) { SelectedTab = tab };
+    var viewModel = new MainViewModel(engine, new TelegramNotifier(new HttpClient()), translator ?? CreateTranslator(engine, new TestWorld()), isMac) { SelectedTab = tab };
     var window = new MainWindow { DataContext = viewModel };
+    if (height is { } value)
+    {
+        window.Height = value;
+    }
+
     window.Show();
     Dispatcher.UIThread.RunJobs();
     AvaloniaHeadlessPlatform.ForceRenderTimerTick();
@@ -83,6 +95,16 @@ var (picking, _) = CreateEngine(new AppSettings());
 picking.BeginPointPick();
 Capture("settings-picking", picking, MainTab.Settings);
 
+var (macro, _) = CreateEngine(new AppSettings
+{
+    Action = AfkAction.Macro,
+    Macro = new Macro { Steps = [new MacroStep(0, MacroStepKind.Key, true, GameKey.W), new MacroStep(1.5, MacroStepKind.Key, false, GameKey.W)] },
+    ReconnectEnabled = true,
+    GameLink = "roblox.com/share?code=abc",
+});
+macro.Tick();
+Capture("settings-all", macro, MainTab.Settings, isMac: false, height: 1900);
+
 var (stopped, _) = CreateEngine(new AppSettings(), isRunning: false);
 stopped.Tick();
 Capture("statistics-stopped", stopped, MainTab.Statistics);
@@ -95,5 +117,25 @@ var (waiting, waitingWorld) = CreateEngine(new AppSettings());
 waitingWorld.Windows.Roblox.Clear();
 waiting.Tick();
 Capture("waiting", waiting, MainTab.Rules, isMac: false);
+
+var (translation, translationWorld) = CreateEngine(new AppSettings { TranslationEnabled = true, TranslationArea = new WindowArea(0.1, 0.6, 0.8, 0.2) }, isRunning: false);
+translationWorld.Windows.Foreground = TestWorld.First;
+translationWorld.TextReader.Result = new TextReadResult(TextReadStatus.Success, [new RecognizedLine("Talk to the merchant to buy a new sword", 0, 0, 1, 0.2)]);
+var translator = CreateTranslator(translation, translationWorld);
+translator.SyncWithSettings();
+translator.TranslateNow();
+Capture("translation", translation, MainTab.Translation, translator: translator);
+
+var (translationOff, translationOffWorld) = CreateEngine(new AppSettings(), isRunning: false);
+Capture("translation-off", translationOff, MainTab.Translation, translator: CreateTranslator(translationOff, translationOffWorld));
+
+var overlayWindow = new OverlayWindow { Width = 460, Height = 90 };
+overlayWindow.ShowMessage("Поговори с торговцем, чтобы купить новый меч. Награда: 500 золотых монет за каждое выполненное задание.", false, 460);
+overlayWindow.Show();
+Dispatcher.UIThread.RunJobs();
+AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+Dispatcher.UIThread.RunJobs();
+overlayWindow.CaptureRenderedFrame()!.Save(Path.Combine(outputFolder, "overlay.png"));
+overlayWindow.Close();
 
 Console.WriteLine($"Готово: {Path.GetFullPath(outputFolder)}");

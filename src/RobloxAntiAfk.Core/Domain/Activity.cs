@@ -20,6 +20,16 @@ public enum ActivityCode
     RobloxNotRunning,
     PermissionMissing,
     UnexpectedError,
+    CharacterReset,
+    MacroSaved,
+    MacroEmpty,
+    MacroMissing,
+    MacroRecordFailed,
+    RobloxClosed,
+    Disconnected,
+    Reconnecting,
+    Reconnected,
+    ReconnectGaveUp,
 }
 
 public sealed record ActivityEntry(
