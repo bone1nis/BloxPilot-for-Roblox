@@ -63,7 +63,7 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
     {
         try
         {
-            if (code >= 0 && _active?.Handle(message) == true)
+            if (code >= 0 && (((MouseHookData*)data)->Flags & NativeMethods.HookMouseInjected) == 0 && _active?.Handle(message) == true)
             {
                 return 1;
             }

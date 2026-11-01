@@ -21,6 +21,8 @@ public sealed class RobloxLogWatcherTests : IDisposable
     [InlineData(PlayerLeft, false)]
     [InlineData(Ordinary, false)]
     [InlineData("[FLog::Network] Lost connection with reason : Lost connection to the game server", true)]
+    [InlineData("[FLog::Network] Connection lost - Cannot contact server/client", true)]
+    [InlineData("[FLog::Output] Player chat: I lost connection yesterday", false)]
     public void Recognises_disconnect_lines(string line, bool expected) =>
         Assert.Equal(expected, RobloxLogWatcher.IsDisconnectLine(line));
 

@@ -58,8 +58,8 @@ public sealed partial class TranslationViewModel : ObservableObject
         HotkeyHint = !snapshot.IsHotkeyActive && settings.TranslationEnabled
             ? $"Сочетание {snapshot.HotkeyLabel} занято другой программой. Перевод работает только кнопкой выше."
             : settings.TranslationSelectEachTime
-                ? $"{snapshot.HotkeyLabel} из любого окна: первое нажатие предложит обвести текст и покажет перевод, следующее его спрячет."
-                : $"{snapshot.HotkeyLabel} показывает и прячет перевод из любого окна. Первое нажатие предложит выбрать область.";
+                ? $"{snapshot.HotkeyLabel} из любого окна: первое нажатие предложит обвести текст и покажет перевод, следующее его спрячет. Спрятать можно и кликом в окне Roblox."
+                : $"{snapshot.HotkeyLabel} показывает и прячет перевод из любого окна. Спрятать можно и кликом в окне Roblox. Первое нажатие предложит выбрать область.";
 
         ShowAreaButton = snapshot.IsSelecting || !settings.TranslationSelectEachTime;
         AreaButtonText = snapshot.IsSelecting ? "Отменить выбор" : settings.TranslationArea is null ? "Выбрать область" : "Выбрать другую область";
@@ -123,7 +123,7 @@ public sealed partial class TranslationViewModel : ObservableObject
 
         if (settings.TranslationSelectEachTime)
         {
-            return "Каждый раз обводишь нужный текст заново: сочетание, выделение, перевод. Следующее сочетание прячет перевод.";
+            return "Каждый раз обводишь нужный текст заново: сочетание, выделение, перевод. Клик в окне Roblox или сочетание прячет перевод.";
         }
 
         return settings.TranslationArea is null

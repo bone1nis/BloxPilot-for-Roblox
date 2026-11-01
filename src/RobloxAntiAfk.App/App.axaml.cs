@@ -41,6 +41,7 @@ public sealed class App : Application
             var clock = new SystemClock();
             var engine = CreateEngine(platform, clock);
             var telegram = new TelegramNotifier(new HttpClient { Timeout = TelegramTimeout });
+            var outbox = new TelegramOutbox(telegram, clock);
             var translator = new ScreenTranslator(
                 platform,
                 engine,
@@ -73,13 +74,15 @@ public sealed class App : Application
             };
 
             SetUpTray(desktop, window, engine);
-            engine.ActivityAdded += entry => NotifyTelegram(engine, telegram, entry);
+            engine.ActivityAdded += entry => QueueTelegram(engine, outbox, entry);
 
             var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             timer.Tick += (_, _) =>
             {
                 engine.Tick();
                 translator.Tick();
+                var settings = engine.Snapshot.Settings;
+                _ = outbox.SendPendingAsync(settings.TelegramToken, settings.TelegramChatId);
             };
             timer.Start();
 
@@ -133,12 +136,14 @@ public sealed class App : Application
         window.Activate();
     }
 
-    private static void NotifyTelegram(AntiAfkEngine engine, TelegramNotifier telegram, ActivityEntry entry)
+    /// <summary>Сообщение может уйти намного позже события, поэтому в нём указано время.</summary>
+    private static void QueueTelegram(AntiAfkEngine engine, TelegramOutbox outbox, ActivityEntry entry)
     {
         var settings = engine.Snapshot.Settings;
         if (Texts.IsWorthNotifying(entry.Code) && settings.TelegramChatId.Length > 0)
         {
-            _ = telegram.SendAsync(settings.TelegramToken, settings.TelegramChatId, $"Roblox AntiAFK: {Texts.Activity(entry)}");
+            outbox.Add($"Roblox AntiAFK, {entry.Time.ToLocalTime():HH:mm}: {Texts.Activity(entry)}");
+            _ = outbox.SendPendingAsync(settings.TelegramToken, settings.TelegramChatId);
         }
     }
 

@@ -298,6 +298,43 @@ public class AutomationTests
     }
 
     [Fact]
+    public void Stopped_app_still_reports_a_disconnect()
+    {
+        var engine = CreateEngine();
+        var seen = new List<ActivityCode>();
+        engine.ActivityAdded += entry => seen.Add(entry.Code);
+
+        _world.Disconnects.IsDisconnected = true;
+        Pass(engine, TimeSpan.FromSeconds(1));
+
+        Assert.Equal([ActivityCode.Disconnected], seen);
+    }
+
+    [Fact]
+    public void Opening_the_app_ignores_disconnects_that_happened_before()
+    {
+        var engine = CreateEngine();
+
+        engine.Start();
+
+        Assert.Equal(1, _world.Disconnects.Arms);
+    }
+
+    [Fact]
+    public void Stopped_app_does_not_report_closing_a_window()
+    {
+        var engine = CreateEngine();
+        var seen = new List<ActivityCode>();
+        engine.ActivityAdded += entry => seen.Add(entry.Code);
+        Pass(engine, TimeSpan.FromSeconds(1));
+
+        _world.Windows.Roblox.Clear();
+        Pass(engine, TimeSpan.FromSeconds(1));
+
+        Assert.Empty(seen);
+    }
+
+    [Fact]
     public void Important_events_reach_subscribers()
     {
         var engine = CreateRunning(Reconnecting);

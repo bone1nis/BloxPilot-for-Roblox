@@ -165,7 +165,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         TelegramToken = settings.TelegramToken;
         TelegramHint = _telegramResult ?? (settings.TelegramChatId.Length > 0
-            ? "Подключено. Сюда придёт сообщение, если Roblox отключится или закроется."
+            ? "Подключено. Об отключении бот напишет, пока приложение открыто, о закрытии окна пока оно запущено. Без интернета сообщение уйдёт, когда он появится."
             : "Создай бота через @BotFather, вставь его токен, напиши боту любое сообщение и нажми «Подключить». Токен хранится на этом компьютере в файле настроек.");
         _isApplying = false;
     }

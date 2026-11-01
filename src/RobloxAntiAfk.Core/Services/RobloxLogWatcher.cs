@@ -51,7 +51,9 @@ public sealed partial class RobloxLogWatcher(string folder) : IDisconnectWatcher
 
     internal static bool IsDisconnectLine(string line)
     {
-        if (line.Contains("Lost connection with reason", StringComparison.Ordinal))
+        // Точные слова при обрыве интернета не подтверждены, поэтому ищем обе формы, но только в сетевых строках клиента.
+        if (line.Contains("FLog::Network", StringComparison.Ordinal)
+            && (line.Contains("lost connection", StringComparison.OrdinalIgnoreCase) || line.Contains("connection lost", StringComparison.OrdinalIgnoreCase)))
         {
             return true;
         }

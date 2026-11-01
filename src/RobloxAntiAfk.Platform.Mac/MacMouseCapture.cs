@@ -103,6 +103,13 @@ internal sealed unsafe class MacMouseCapture : IMouseCapture
 
     private bool Handle(uint type, nint cgEvent)
     {
+        // Клики самого приложения, например действие по расписанию, сюда не относятся.
+        if (type is not (CoreGraphics.EventTapDisabledByTimeout or CoreGraphics.EventTapDisabledByUserInput)
+            && CoreGraphics.CGEventGetIntegerValueField(cgEvent, CoreGraphics.SourceProcessIdField) == Environment.ProcessId)
+        {
+            return false;
+        }
+
         switch (type)
         {
             case CoreGraphics.EventTapDisabledByTimeout:

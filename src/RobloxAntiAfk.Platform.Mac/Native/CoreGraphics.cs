@@ -31,6 +31,7 @@ internal static unsafe partial class CoreGraphics
     public const uint EventKeyUp = 11;
     public const uint EventFlagsChanged = 12;
     public const int KeyboardKeyCodeField = 9;
+    public const int SourceProcessIdField = 41;
     public const ulong FlagShift = 0x20000;
     public const ulong FlagControl = 0x40000;
     public const uint EventTapDisabledByTimeout = 0xFFFFFFFE;

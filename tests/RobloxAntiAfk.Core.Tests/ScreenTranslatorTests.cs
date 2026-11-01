@@ -100,6 +100,102 @@ public class ScreenTranslatorTests
     }
 
     [Fact]
+    public void Click_in_the_roblox_window_removes_the_translation_and_stays_out_of_the_game()
+    {
+        var setup = Create();
+        setup.Translator.TranslateNow();
+        Assert.Equal("Привет", setup.Overlay.Text);
+
+        var isSwallowed = setup.World.Capture.Click(InsideWindow);
+
+        Assert.True(isSwallowed);
+        Assert.Null(setup.Overlay.Text);
+        Assert.False(setup.Translator.Snapshot.IsOverlayActive);
+    }
+
+    [Fact]
+    public void Each_time_mode_click_removes_and_next_hotkey_selects_again()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        setup.World.TranslationHotkey.Press();
+        setup.World.Capture.Drag(InsideWindow, LaterInsideWindow);
+        Assert.Equal("Привет", setup.Overlay.Text);
+
+        setup.World.Capture.Click(InsideWindow);
+        Assert.Null(setup.Overlay.Text);
+
+        setup.World.TranslationHotkey.Press();
+        Assert.True(setup.Translator.Snapshot.IsSelecting);
+        Assert.True(setup.World.Capture.Drag(InsideWindow, LaterInsideWindow));
+        Assert.Equal("Привет", setup.Overlay.Text);
+    }
+
+    [Fact]
+    public void Click_outside_roblox_passes_through_and_keeps_the_translation()
+    {
+        var setup = Create();
+        setup.Translator.TranslateNow();
+
+        Assert.False(setup.World.Capture.Click(new ScreenPoint(1, 1)));
+
+        Assert.Equal("Привет", setup.Overlay.Text);
+    }
+
+    [Fact]
+    public void Clicks_are_not_taken_while_the_panel_is_not_on_screen()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true, TranslationArea = Area, TranslationSelectEachTime = false, TranslationAutoRefresh = true });
+        setup.Translator.TranslateNow();
+        setup.World.TextReader.Result = new TextReadResult(TextReadStatus.Success, []);
+        setup.World.Clock.Advance(TimeSpan.FromSeconds(3));
+        setup.Translator.Tick();
+        Assert.Null(setup.Overlay.Text);
+
+        Assert.False(setup.World.Capture.Click(InsideWindow));
+        Assert.True(setup.Translator.Snapshot.IsOverlayActive);
+    }
+
+    [Fact]
+    public void Mouse_is_watched_only_while_the_translation_is_shown()
+    {
+        var setup = Create();
+        Assert.False(setup.World.Capture.IsActive);
+
+        setup.Translator.TranslateNow();
+        Assert.True(setup.World.Capture.IsActive);
+
+        setup.World.TranslationHotkey.Press();
+        Assert.False(setup.World.Capture.IsActive);
+    }
+
+    [Fact]
+    public void Translation_still_shows_if_the_mouse_cannot_be_watched()
+    {
+        var setup = Create();
+        setup.World.Capture.CanStart = false;
+
+        setup.Translator.TranslateNow();
+
+        Assert.Equal("Привет", setup.Overlay.Text);
+        setup.World.TranslationHotkey.Press();
+        Assert.Null(setup.Overlay.Text);
+    }
+
+    [Fact]
+    public void Picking_a_point_closes_the_translation_without_breaking_the_pick()
+    {
+        var setup = Create();
+        setup.Translator.TranslateNow();
+
+        setup.Engine.BeginPointPick();
+        setup.Translator.Tick();
+
+        Assert.Null(setup.Overlay.Text);
+        Assert.True(setup.World.Capture.IsActive);
+        Assert.Equal(EngineState.PickingPoint, setup.Engine.Snapshot.State);
+    }
+
+    [Fact]
     public void Selection_explains_itself_on_screen_and_the_hint_goes_away_on_cancel()
     {
         var setup = Create();

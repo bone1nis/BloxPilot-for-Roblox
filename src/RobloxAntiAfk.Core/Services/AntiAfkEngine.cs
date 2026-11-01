@@ -107,6 +107,7 @@ public sealed class AntiAfkEngine
     /// <summary>По умолчанию приложение открывается выключенным: ничего не нажимает, пока пользователь сам не запустит.</summary>
     public void Start()
     {
+        _platform.Disconnects.Arm();
         ApplySleepMode();
         _isHotkeyActive = _platform.Hotkey.Start(HandleHotkey);
         if (_settings.RunOnOpen)
@@ -563,6 +564,13 @@ public sealed class AntiAfkEngine
     /// </summary>
     private void WatchConnection(IReadOnlyList<WindowHandle> windows, DateTimeOffset now)
     {
+        // Об отключении сообщаем и в выключенном приложении: человек может играть сам. Обратно заходим только в запущенном.
+        var isDisconnected = _platform.Disconnects.Poll();
+        if (isDisconnected)
+        {
+            AddActivity(ActivitySeverity.Error, ActivityCode.Disconnected);
+        }
+
         if (_isStopped)
         {
             return;
@@ -575,9 +583,8 @@ public sealed class AntiAfkEngine
 
         _hadWindows = windows.Count > 0;
 
-        if (_platform.Disconnects.Poll())
+        if (isDisconnected)
         {
-            AddActivity(ActivitySeverity.Error, ActivityCode.Disconnected);
             _rejoinCheckAt = null;
             _reconnectAt = now;
         }

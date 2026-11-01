@@ -57,6 +57,7 @@ public sealed class ScreenTranslator
     /// <summary>Пользователь включил подпись, но на экране её может не быть: окно Roblox сейчас не впереди.</summary>
     private bool _isActive;
     private bool _isBusy;
+    private bool _isDismissArmed;
     private bool _isOverlayVisible;
     private bool _shownIsError;
     private string _shownText = "";
@@ -138,10 +139,19 @@ public sealed class ScreenTranslator
             }
         }
 
+        // Выбор точки и запись макроса важнее: мышь нужна им, а перевод можно показать потом.
+        if (_isActive && IsEngineUsingMouse)
+        {
+            _isDismissArmed = false;
+            Close();
+        }
+
         if (!_isActive || _isBusy)
         {
             return;
         }
+
+        ArmDismiss();
 
         var window = FindForegroundRoblox();
         if (window == WindowHandle.None || _platform.Windows.GetBounds(window) is not { } bounds)
@@ -223,6 +233,7 @@ public sealed class ScreenTranslator
     public void Close()
     {
         _readCancel?.Cancel();
+        DisarmDismiss();
         _isActive = false;
         _shownText = "";
         _messageUntil = null;
@@ -241,6 +252,7 @@ public sealed class ScreenTranslator
     {
         _readCancel?.Cancel();
         CancelSelection();
+        DisarmDismiss();
         if (_isHotkeyRegistered)
         {
             _platform.TranslationHotkey.Stop();
@@ -361,6 +373,56 @@ public sealed class ScreenTranslator
         TextReadStatus.EmptyCapture => TranslationStatus.EmptyCapture,
         _ => TranslationStatus.ReadFailed,
     };
+
+    private bool IsEngineUsingMouse => _engine.Snapshot.State is EngineState.PickingPoint or EngineState.RecordingMacro;
+
+    /// <summary>Мышь перехватывается, только пока перевод показан. Без разрешения его можно убрать сочетанием.</summary>
+    private void ArmDismiss()
+    {
+        if (!_isDismissArmed && !_isSelecting && !IsEngineUsingMouse)
+        {
+            _isDismissArmed = _platform.MouseCapture.Start(OnDismissClick);
+        }
+    }
+
+    private void DisarmDismiss()
+    {
+        if (_isDismissArmed)
+        {
+            _isDismissArmed = false;
+            _platform.MouseCapture.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Вызывается из системного перехвата мыши. Клик по окну Roblox убирает перевод и в игру не попадает.
+    /// Если подписи сейчас не видно, клик проходит как обычно. Перехват снимется при отпускании кнопки.
+    /// </summary>
+    private bool OnDismissClick(ScreenPoint point)
+    {
+        if (!_isActive || !_isOverlayVisible)
+        {
+            return false;
+        }
+
+        var foreground = _platform.Windows.GetForegroundWindow();
+        if (!_platform.Windows.FindRobloxWindows().Contains(foreground)
+            || _platform.Windows.GetBounds(foreground) is not { } bounds
+            || !bounds.Contains(point))
+        {
+            return false;
+        }
+
+        _isDismissArmed = false;
+        _ = DismissAsync();
+        return true;
+    }
+
+    private async Task DismissAsync()
+    {
+        await _clock.Yield();
+        Close();
+    }
 
     private bool CanUseMouse() => _engine.Snapshot.State is not (EngineState.Acting or EngineState.PickingPoint or EngineState.RecordingMacro);
 
@@ -607,6 +669,7 @@ public sealed class ScreenTranslator
         _shownIsError = translated is null;
         _shownText = translated ?? $"{text}\n\nПеревод сейчас недоступен: проверь интернет.";
         ShowOnOverlay(area, bounds, _shownText, _shownIsError);
+        ArmDismiss();
         SetStatus(translated is null ? TranslationStatus.ShownOriginal : TranslationStatus.Shown);
     }
 
@@ -645,6 +708,7 @@ public sealed class ScreenTranslator
     /// <summary>Ошибку видно и в самой игре: нажав сочетание, пользователь не смотрит на приложение.</summary>
     private void Report(TranslationStatus status)
     {
+        DisarmDismiss();
         _status = status;
         _isActive = false;
         _shownText = "";
