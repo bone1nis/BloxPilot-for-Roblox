@@ -14,16 +14,25 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
 
     private nint _hook;
     private bool _swallowMouseUp;
+    private bool _swallowRightUp;
     private Func<ScreenPoint, bool>? _onMouseDown;
     private Action<ScreenPoint>? _onMouseMove;
     private Action<ScreenPoint>? _onMouseUp;
+    private Func<ScreenPoint, bool>? _onRightDown;
+    private Action? _onRightUp;
 
-    public bool Start(Func<ScreenPoint, bool> onMouseDown) => Install(onMouseDown, null, null);
+    public bool Start(Func<ScreenPoint, bool> onMouseDown, bool includeRightButton = false) =>
+        Install(onMouseDown, null, null, includeRightButton ? onMouseDown : null, null);
 
-    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp) =>
-        Install(onMouseDown, onMouseMove, onMouseUp);
+    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp, Action onRightClick) =>
+        Install(onMouseDown, onMouseMove, onMouseUp, _ => true, onRightClick);
 
-    private bool Install(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint>? onMouseMove, Action<ScreenPoint>? onMouseUp)
+    private bool Install(
+        Func<ScreenPoint, bool> onMouseDown,
+        Action<ScreenPoint>? onMouseMove,
+        Action<ScreenPoint>? onMouseUp,
+        Func<ScreenPoint, bool>? onRightDown,
+        Action? onRightUp)
     {
         Stop();
         var module = NativeMethods.GetModuleHandle(0);
@@ -36,6 +45,8 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
         _onMouseDown = onMouseDown;
         _onMouseMove = onMouseMove;
         _onMouseUp = onMouseUp;
+        _onRightDown = onRightDown;
+        _onRightUp = onRightUp;
         _active = this;
         return true;
     }
@@ -51,7 +62,10 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
         _onMouseDown = null;
         _onMouseMove = null;
         _onMouseUp = null;
+        _onRightDown = null;
+        _onRightUp = null;
         _swallowMouseUp = false;
+        _swallowRightUp = false;
         if (_active == this)
         {
             _active = null;
@@ -99,6 +113,21 @@ internal sealed unsafe class WindowsMouseCapture : IMouseCapture
             NativeMethods.GetCursorPos(out var cursor);
             Stop();
             onUp?.Invoke(new ScreenPoint(cursor.X, cursor.Y));
+            return true;
+        }
+
+        if (message == NativeMethods.MessageRightButtonDown && _onRightDown is { } rightHandler)
+        {
+            NativeMethods.GetCursorPos(out var cursor);
+            _swallowRightUp = rightHandler(new ScreenPoint(cursor.X, cursor.Y));
+            return _swallowRightUp;
+        }
+
+        if (message == NativeMethods.MessageRightButtonUp && _swallowRightUp)
+        {
+            var onRightUp = _onRightUp;
+            Stop();
+            onRightUp?.Invoke();
             return true;
         }
 

@@ -171,7 +171,7 @@ void SaveOverlay(string name)
     frozenOverlay.CaptureRenderedFrame()!.Save(Path.Combine(outputFolder, name));
 }
 
-frozenOverlay.ShowFrozen(frozenBitmap, "Зажми левую кнопку мыши и обведи текст");
+frozenOverlay.ShowFrozen(frozenBitmap, "Зажми левую кнопку мыши и обведи текст. Отмена: Esc или правая кнопка");
 frozenOverlay.Show();
 SaveOverlay("frozen-prompt.png");
 frozenOverlay.ShowFrame(120, 200, 400, 90);

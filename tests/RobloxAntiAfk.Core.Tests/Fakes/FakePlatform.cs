@@ -110,11 +110,13 @@ public sealed class FakeCapture : IMouseCapture
     private Func<ScreenPoint, bool>? _handler;
     private Action<ScreenPoint>? _onMove;
     private Action<ScreenPoint>? _onUp;
+    private Action? _onRightClick;
+    private bool _isRightIncluded;
 
     public bool CanStart { get; set; } = true;
     public bool IsActive => _handler is not null;
 
-    public bool Start(Func<ScreenPoint, bool> onMouseDown)
+    public bool Start(Func<ScreenPoint, bool> onMouseDown, bool includeRightButton = false)
     {
         if (!CanStart)
         {
@@ -122,10 +124,11 @@ public sealed class FakeCapture : IMouseCapture
         }
 
         _handler = onMouseDown;
+        _isRightIncluded = includeRightButton;
         return true;
     }
 
-    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp)
+    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp, Action onRightClick)
     {
         if (!Start(onMouseDown))
         {
@@ -134,6 +137,7 @@ public sealed class FakeCapture : IMouseCapture
 
         _onMove = onMouseMove;
         _onUp = onMouseUp;
+        _onRightClick = onRightClick;
         return true;
     }
 
@@ -142,9 +146,23 @@ public sealed class FakeCapture : IMouseCapture
         _handler = null;
         _onMove = null;
         _onUp = null;
+        _onRightClick = null;
+        _isRightIncluded = false;
     }
 
     public bool Click(ScreenPoint point) => _handler?.Invoke(point) ?? false;
+
+    public bool RightClick(ScreenPoint point)
+    {
+        if (_onRightClick is { } onRightClick)
+        {
+            Stop();
+            onRightClick();
+            return true;
+        }
+
+        return _isRightIncluded && Click(point);
+    }
 
     public bool Drag(ScreenPoint from, ScreenPoint to)
     {
@@ -189,6 +207,7 @@ public sealed class FakeHotkey(string label = "Ctrl+Shift+F8") : IGlobalHotkey
     private Action? _handler;
 
     public bool CanStart { get; set; } = true;
+    public bool IsStarted => _handler is not null;
     public string Label => label;
 
     public bool Start(Action onPressed)
@@ -367,11 +386,12 @@ public sealed class TestWorld
     public FakeLauncher Launcher { get; } = new();
     public FakeDisconnects Disconnects { get; } = new();
     public FakeHotkey TranslationHotkey { get; } = new("Ctrl+Shift+X");
+    public FakeHotkey CancelKey { get; } = new("Esc");
     public FakeTextReader TextReader { get; } = new();
 
     public PlatformServices Platform =>
         new(Windows, Input, Idle, Sleep, Permission, Capture, Recorder, Hotkey, AutoStart, Audio, Launcher, Disconnects,
-            TranslationHotkey, TextReader, new FakeOverlaySupport(), TimeSpan.FromMilliseconds(500));
+            TranslationHotkey, CancelKey, TextReader, new FakeOverlaySupport(), TimeSpan.FromMilliseconds(500));
 
     public TestWorld WithRoblox(params WindowHandle[] windows)
     {

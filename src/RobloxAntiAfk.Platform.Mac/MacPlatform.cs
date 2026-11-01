@@ -23,9 +23,11 @@ public static class MacPlatform
             new MacAutoStart(),
             new NoAudioControl(),
             new MacLauncher(),
-            new RobloxLogWatcher(Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Logs", "Roblox")),
+            new RobloxLogWatcher(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Logs", "Roblox"),
+                new SystemClock()),
             new MacHotkey(2, MacHotkey.KeyCodeT, "Control+Option+T"),
+            new MacHotkey(3, MacHotkey.KeyCodeEscape, "Esc", modifiers: 0),
             new MacScreenTextReader(),
             new MacOverlaySupport(),
             // Если Roblox на весь экран, macOS показывает анимацию перехода.

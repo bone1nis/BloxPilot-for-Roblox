@@ -18,7 +18,7 @@ public sealed class App : Application
 {
     private const string AutoStartArgument = "--autostart";
     private const string SelfTestArgument = "--self-test=";
-    private static readonly TimeSpan TelegramTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan TelegramTimeout = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan TranslationTimeout = TimeSpan.FromSeconds(8);
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -40,7 +40,7 @@ public sealed class App : Application
 
             var clock = new SystemClock();
             var engine = CreateEngine(platform, clock);
-            var telegram = new TelegramNotifier(new HttpClient { Timeout = TelegramTimeout });
+            var telegram = new TelegramNotifier(TelegramNotifier.CreateHttpClient(TelegramTimeout));
             var outbox = new TelegramOutbox(telegram, clock);
             var translator = new ScreenTranslator(
                 platform,

@@ -114,6 +114,30 @@ public class ScreenTranslatorTests
     }
 
     [Fact]
+    public void Right_click_in_the_roblox_window_removes_the_translation_and_stays_out_of_the_game()
+    {
+        var setup = Create();
+        setup.Translator.TranslateNow();
+        Assert.Equal("Привет", setup.Overlay.Text);
+
+        var isSwallowed = setup.World.Capture.RightClick(InsideWindow);
+
+        Assert.True(isSwallowed);
+        Assert.Null(setup.Overlay.Text);
+        Assert.False(setup.Translator.Snapshot.IsOverlayActive);
+    }
+
+    [Fact]
+    public void Right_click_outside_roblox_passes_through_and_keeps_the_translation()
+    {
+        var setup = Create();
+        setup.Translator.TranslateNow();
+
+        Assert.False(setup.World.Capture.RightClick(new ScreenPoint(1, 1)));
+        Assert.Equal("Привет", setup.Overlay.Text);
+    }
+
+    [Fact]
     public void Each_time_mode_click_removes_and_next_hotkey_selects_again()
     {
         var setup = Create(new AppSettings { TranslationEnabled = true });
@@ -448,6 +472,66 @@ public class ScreenTranslatorTests
 
         Assert.False(setup.World.Capture.Click(new ScreenPoint(1, 1)));
         Assert.True(setup.Translator.Snapshot.IsSelecting);
+    }
+
+    [Fact]
+    public void Right_click_cancels_selection_and_stays_out_of_the_game()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        setup.Translator.BeginSelection();
+        Assert.NotNull(setup.Overlay.Frozen);
+
+        var isSwallowed = setup.World.Capture.RightClick(InsideWindow);
+
+        Assert.True(isSwallowed);
+        AssertSelectionCancelled(setup);
+    }
+
+    [Fact]
+    public void Escape_cancels_selection()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        setup.Translator.BeginSelection();
+        Assert.True(setup.World.CancelKey.IsStarted);
+
+        setup.World.CancelKey.Press();
+
+        AssertSelectionCancelled(setup);
+    }
+
+    [Fact]
+    public void Escape_stays_free_when_nothing_is_being_selected()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        Assert.False(setup.World.CancelKey.IsStarted);
+
+        setup.Translator.BeginSelection();
+        setup.World.Capture.Drag(InsideWindow, LaterInsideWindow);
+
+        Assert.Equal("Привет", setup.Overlay.Text);
+        Assert.False(setup.World.CancelKey.IsStarted);
+    }
+
+    [Fact]
+    public void Selection_still_works_when_escape_is_taken_by_another_program()
+    {
+        var setup = Create(new AppSettings { TranslationEnabled = true });
+        setup.World.CancelKey.CanStart = false;
+
+        setup.Translator.BeginSelection();
+
+        Assert.True(setup.World.Capture.Drag(InsideWindow, LaterInsideWindow));
+        Assert.Equal("Привет", setup.Overlay.Text);
+    }
+
+    private static void AssertSelectionCancelled(Setup setup)
+    {
+        Assert.False(setup.Translator.Snapshot.IsSelecting);
+        Assert.False(setup.World.Capture.IsActive);
+        Assert.False(setup.World.CancelKey.IsStarted);
+        Assert.Null(setup.Overlay.Frozen);
+        Assert.Empty(setup.World.TextReader.Reads);
+        Assert.Equal(TranslationStatus.ReadyToSelect, setup.Translator.Snapshot.Status);
     }
 
     [Fact]

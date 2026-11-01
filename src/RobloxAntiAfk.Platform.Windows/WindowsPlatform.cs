@@ -23,9 +23,11 @@ public static class WindowsPlatform
             new WindowsAutoStart(),
             new WindowsAudio(),
             new WindowsLauncher(),
-            new RobloxLogWatcher(Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "logs")),
+            new RobloxLogWatcher(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "logs"),
+                new SystemClock()),
             new WindowsHotkey(2, NativeMethods.VirtualKeyX, "Ctrl+Shift+X"),
+            new WindowsHotkey(3, NativeMethods.VirtualKeyEscape, "Esc", modifiers: 0),
             new WindowsScreenTextReader(recognizer),
             new WindowsOverlaySupport(),
             WindowSettleDelay: TimeSpan.FromMilliseconds(500));

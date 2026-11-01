@@ -26,7 +26,7 @@ public interface ITranslationOverlay
 public sealed class ScreenTranslator
 {
     public const double MinAreaSize = 12;
-    private const string SelectionPrompt = "Зажми левую кнопку мыши и обведи текст";
+    private const string SelectionPrompt = "Зажми левую кнопку мыши и обведи текст. Отмена: Esc или правая кнопка";
     private static readonly TimeSpan SelectionTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan MessageDuration = TimeSpan.FromSeconds(4);
@@ -212,6 +212,7 @@ public sealed class ScreenTranslator
         _isSelecting = false;
         _isDragging = false;
         _platform.MouseCapture.Stop();
+        _platform.CancelKey.Stop();
         HideOverlay();
         ReleaseSnapshot();
         SetStatus(IdleStatus(Settings));
@@ -338,10 +339,14 @@ public sealed class ScreenTranslator
             _selectionBounds = bounds;
             _overlay.ShowFrozen(_snapshot, SelectionPrompt);
             _isOverlayVisible = true;
-            if (!_platform.MouseCapture.StartDrag(OnSelectionDown, OnSelectionMove, OnSelectionUp))
+            if (!_platform.MouseCapture.StartDrag(OnSelectionDown, OnSelectionMove, OnSelectionUp, OnSelectionCancel))
             {
                 AbortSelection(TranslationStatus.SelectionFailed);
+                return;
             }
+
+            // Если Esc занят другой программой, останутся правая кнопка и сочетание.
+            _platform.CancelKey.Start(OnSelectionCancel);
         }
         catch (Exception exception)
         {
@@ -356,6 +361,7 @@ public sealed class ScreenTranslator
         _isSelecting = false;
         _isDragging = false;
         _platform.MouseCapture.Stop();
+        _platform.CancelKey.Stop();
         HideOverlay();
         ReleaseSnapshot();
         Report(status);
@@ -376,12 +382,12 @@ public sealed class ScreenTranslator
 
     private bool IsEngineUsingMouse => _engine.Snapshot.State is EngineState.PickingPoint or EngineState.RecordingMacro;
 
-    /// <summary>Мышь перехватывается, только пока перевод показан. Без разрешения его можно убрать сочетанием.</summary>
+    /// <summary>Мышь перехватывается, только пока перевод показан. Убирают его обе кнопки. Без разрешения его можно убрать сочетанием.</summary>
     private void ArmDismiss()
     {
         if (!_isDismissArmed && !_isSelecting && !IsEngineUsingMouse)
         {
-            _isDismissArmed = _platform.MouseCapture.Start(OnDismissClick);
+            _isDismissArmed = _platform.MouseCapture.Start(OnDismissClick, includeRightButton: true);
         }
     }
 
@@ -475,9 +481,24 @@ public sealed class ScreenTranslator
         }
     }
 
+    /// <summary>Вызывается из системного перехвата, поэтому сама отмена откладывается на следующий проход цикла интерфейса.</summary>
+    private void OnSelectionCancel() => _ = CancelSelectionAsync();
+
+    private async Task CancelSelectionAsync()
+    {
+        await _clock.Yield();
+        CancelSelection();
+    }
+
     private async Task FinishSelectionAsync()
     {
         await _clock.Yield();
+        if (!_isSelecting)
+        {
+            return;
+        }
+
+        _platform.CancelKey.Stop();
         var area = DraggedArea();
         var bounds = _selectionBounds;
         var snapshot = _snapshot;

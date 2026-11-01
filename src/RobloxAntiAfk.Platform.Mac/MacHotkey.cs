@@ -4,10 +4,11 @@ using RobloxAntiAfk.Platform.Mac.Native;
 
 namespace RobloxAntiAfk.Platform.Mac;
 
-internal sealed unsafe class MacHotkey(uint id, uint keyCode, string label) : IGlobalHotkey
+internal sealed unsafe class MacHotkey(uint id, uint keyCode, string label, uint modifiers = Carbon.ControlModifier | Carbon.OptionModifier) : IGlobalHotkey
 {
     public const uint KeyCodeA = 0;
     public const uint KeyCodeT = 17;
+    public const uint KeyCodeEscape = 53;
     private const uint Signature = 0x52414146; // 'RAAF'
 
     private static readonly Dictionary<uint, Action> Handlers = [];
@@ -29,7 +30,7 @@ internal sealed unsafe class MacHotkey(uint id, uint keyCode, string label) : IG
         }
 
         var hotKeyId = new EventHotKeyId { Signature = Signature, Id = id };
-        if (Carbon.RegisterEventHotKey(keyCode, Carbon.ControlModifier | Carbon.OptionModifier, hotKeyId, target, 0, out _hotKey) != 0)
+        if (Carbon.RegisterEventHotKey(keyCode, modifiers, hotKeyId, target, 0, out _hotKey) != 0)
         {
             _hotKey = 0;
             Stop();

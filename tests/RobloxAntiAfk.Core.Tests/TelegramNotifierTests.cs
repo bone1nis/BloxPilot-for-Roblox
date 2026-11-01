@@ -42,7 +42,7 @@ public class TelegramNotifierTests
         var (notifier, handler) = Create();
 
         Assert.False(await notifier.SendAsync("not-a-token", "42", "text"));
-        Assert.Null(await notifier.FindChatIdAsync("not-a-token"));
+        Assert.Equal(TelegramLookupStatus.TokenRejected, (await notifier.FindChatAsync("not-a-token")).Status);
 
         Assert.Null(handler.LastUri);
     }
@@ -61,7 +61,7 @@ public class TelegramNotifierTests
         var notifier = new TelegramNotifier(new HttpClient(new FailingHandler()));
 
         Assert.False(await notifier.SendAsync(Token, "42", "text"));
-        Assert.Null(await notifier.FindChatIdAsync(Token));
+        Assert.Equal(TelegramLookupStatus.Unreachable, (await notifier.FindChatAsync(Token)).Status);
     }
 
     [Fact]
@@ -70,18 +70,80 @@ public class TelegramNotifierTests
         const string body = """{"ok":true,"result":[{"message":{"chat":{"id":1}}},{"edited_message":{}},{"message":{"chat":{"id":-200}}}]}""";
         var (notifier, _) = Create(body: body);
 
-        Assert.Equal("-200", await notifier.FindChatIdAsync(Token));
+        var lookup = await notifier.FindChatAsync(Token);
+
+        Assert.Equal(TelegramLookupStatus.Found, lookup.Status);
+        Assert.Equal("-200", lookup.ChatId);
     }
 
     [Theory]
-    [InlineData("""{"ok":true,"result":[]}""")]
-    [InlineData("""{"ok":false}""")]
-    [InlineData("not json")]
-    public async Task No_chat_when_there_is_no_message(string body)
+    [InlineData("""{"ok":true,"result":[{"edited_message":{"chat":{"id":7}}}]}""")]
+    [InlineData("""{"ok":true,"result":[{"my_chat_member":{"chat":{"id":7}}}]}""")]
+    public async Task Finds_chat_from_other_updates_of_the_user(string body)
     {
         var (notifier, _) = Create(body: body);
 
-        Assert.Null(await notifier.FindChatIdAsync(Token));
+        Assert.Equal("7", (await notifier.FindChatAsync(Token)).ChatId);
+    }
+
+    [Fact]
+    public async Task No_messages_names_the_bot_so_the_user_can_check_it()
+    {
+        var notifier = new TelegramNotifier(new HttpClient(new ByMethodHandler(
+            """{"ok":true,"result":[]}""",
+            """{"ok":true,"result":{"username":"my_bot"}}""")));
+
+        var lookup = await notifier.FindChatAsync(Token);
+
+        Assert.Equal(TelegramLookupStatus.NoMessages, lookup.Status);
+        Assert.Equal("my_bot", lookup.BotName);
+        Assert.Null(lookup.ChatId);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, TelegramLookupStatus.TokenRejected)]
+    [InlineData(HttpStatusCode.NotFound, TelegramLookupStatus.TokenRejected)]
+    [InlineData(HttpStatusCode.Conflict, TelegramLookupStatus.Conflict)]
+    [InlineData(HttpStatusCode.BadGateway, TelegramLookupStatus.Unreachable)]
+    public async Task Failure_reason_comes_from_the_status_code(HttpStatusCode status, TelegramLookupStatus expected)
+    {
+        var (notifier, _) = Create(status);
+
+        Assert.Equal(expected, (await notifier.FindChatAsync(Token)).Status);
+    }
+
+    [Theory]
+    [InlineData("""{"ok":false}""")]
+    [InlineData("not json")]
+    public async Task Strange_answer_means_telegram_was_not_reached(string body)
+    {
+        var (notifier, _) = Create(body: body);
+
+        Assert.Equal(TelegramLookupStatus.Unreachable, (await notifier.FindChatAsync(Token)).Status);
+    }
+
+    [Fact]
+    public async Task Client_connects_when_only_one_address_family_answers()
+    {
+        using var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var cancellation = TestContext.Current.CancellationToken;
+        var server = Task.Run(
+            async () =>
+            {
+                using var client = await listener.AcceptTcpClientAsync(cancellation);
+                var stream = client.GetStream();
+                _ = await stream.ReadAsync(new byte[1024], cancellation);
+                await stream.WriteAsync("HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"u8.ToArray(), cancellation);
+            },
+            cancellation);
+        using var http = TelegramNotifier.CreateHttpClient(TimeSpan.FromSeconds(10));
+
+        using var response = await http.GetAsync($"http://localhost:{port}/", cancellation);
+
+        Assert.True(response.IsSuccessStatusCode);
+        await server;
     }
 
     private sealed class FakeHandler(HttpStatusCode status, string body) : HttpMessageHandler
@@ -94,6 +156,15 @@ public class TelegramNotifierTests
             LastUri = request.RequestUri?.ToString();
             LastBody = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
             return new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+        }
+    }
+
+    private sealed class ByMethodHandler(string updates, string me) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var body = request.RequestUri!.AbsolutePath.EndsWith("/getMe", StringComparison.Ordinal) ? me : updates;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
         }
     }
 

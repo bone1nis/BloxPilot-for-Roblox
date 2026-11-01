@@ -123,7 +123,7 @@ public static class Texts
         TranslationStatus.ReadyToSelect => $"Готово. Нажми {snapshot.HotkeyLabel} в игре и обведи текст.",
         TranslationStatus.SelectingArea => "Жду, пока ты обведёшь текст.",
         TranslationStatus.Reading => "Читаю текст...",
-        TranslationStatus.Shown => $"Перевод показан. Чтобы убрать, кликни в окне Roblox или нажми {snapshot.HotkeyLabel}.",
+        TranslationStatus.Shown => $"Перевод показан. Чтобы убрать, кликни левой или правой кнопкой в окне Roblox или нажми {snapshot.HotkeyLabel}.",
         TranslationStatus.ShownOriginal => "Текст прочитан, но перевод сейчас недоступен. Проверь интернет.",
         TranslationStatus.NoText => "В выбранной области текст не найден.",
         TranslationStatus.AreaTooSmall => "Область слишком маленькая, выбери её заново.",

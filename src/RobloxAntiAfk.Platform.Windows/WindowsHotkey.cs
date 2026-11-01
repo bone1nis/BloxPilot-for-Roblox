@@ -7,7 +7,7 @@ namespace RobloxAntiAfk.Platform.Windows;
 /// Сообщение о сочетании приходит в невидимое окно этого же потока, поэтому хук клавиатуры не нужен:
 /// приложение не видит остальных нажатий. Цикл сообщений интерфейса обслуживает и это окно.
 /// </summary>
-internal sealed unsafe class WindowsHotkey(int id, uint virtualKey, string label) : IGlobalHotkey
+internal sealed unsafe class WindowsHotkey(int id, uint virtualKey, string label, uint modifiers = NativeMethods.ModifierControl | NativeMethods.ModifierShift) : IGlobalHotkey
 {
     private const string ClassName = "RobloxAntiAfkHotkey";
 
@@ -42,8 +42,7 @@ internal sealed unsafe class WindowsHotkey(int id, uint virtualKey, string label
         }
 
         Handlers[_window] = onPressed;
-        const uint modifiers = NativeMethods.ModifierControl | NativeMethods.ModifierShift | NativeMethods.ModifierNoRepeat;
-        if (NativeMethods.RegisterHotKey(_window, id, modifiers, virtualKey) == 0)
+        if (NativeMethods.RegisterHotKey(_window, id, modifiers | NativeMethods.ModifierNoRepeat, virtualKey) == 0)
         {
             Stop();
             return false;

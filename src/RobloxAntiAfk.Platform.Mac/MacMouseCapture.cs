@@ -13,23 +13,34 @@ internal sealed unsafe class MacMouseCapture : IMouseCapture
     private nint _tap;
     private nint _source;
     private bool _swallowMouseUp;
+    private bool _swallowRightUp;
     private Func<ScreenPoint, bool>? _onMouseDown;
     private Action<ScreenPoint>? _onMouseMove;
     private Action<ScreenPoint>? _onMouseUp;
+    private Func<ScreenPoint, bool>? _onRightDown;
+    private Action? _onRightUp;
 
-    public bool Start(Func<ScreenPoint, bool> onMouseDown) => Install(onMouseDown, null, null);
+    public bool Start(Func<ScreenPoint, bool> onMouseDown, bool includeRightButton = false) =>
+        Install(onMouseDown, null, null, includeRightButton ? onMouseDown : null, null);
 
-    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp) =>
-        Install(onMouseDown, onMouseMove, onMouseUp);
+    public bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp, Action onRightClick) =>
+        Install(onMouseDown, onMouseMove, onMouseUp, _ => true, onRightClick);
 
-    private bool Install(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint>? onMouseMove, Action<ScreenPoint>? onMouseUp)
+    private bool Install(
+        Func<ScreenPoint, bool> onMouseDown,
+        Action<ScreenPoint>? onMouseMove,
+        Action<ScreenPoint>? onMouseUp,
+        Func<ScreenPoint, bool>? onRightDown,
+        Action? onRightUp)
     {
         Stop();
         ReleaseStoppedTap();
 
         const ulong mask = (1UL << (int)CoreGraphics.EventLeftMouseDown)
             | (1UL << (int)CoreGraphics.EventLeftMouseUp)
-            | (1UL << (int)CoreGraphics.EventLeftMouseDragged);
+            | (1UL << (int)CoreGraphics.EventLeftMouseDragged)
+            | (1UL << (int)CoreGraphics.EventRightMouseDown)
+            | (1UL << (int)CoreGraphics.EventRightMouseUp);
         _tap = CoreGraphics.CGEventTapCreate(
             CoreGraphics.SessionEventTap,
             CoreGraphics.HeadInsertEventTap,
@@ -48,6 +59,8 @@ internal sealed unsafe class MacMouseCapture : IMouseCapture
         _onMouseDown = onMouseDown;
         _onMouseMove = onMouseMove;
         _onMouseUp = onMouseUp;
+        _onRightDown = onRightDown;
+        _onRightUp = onRightUp;
         _active = this;
         return true;
     }
@@ -65,7 +78,10 @@ internal sealed unsafe class MacMouseCapture : IMouseCapture
         _onMouseDown = null;
         _onMouseMove = null;
         _onMouseUp = null;
+        _onRightDown = null;
+        _onRightUp = null;
         _swallowMouseUp = false;
+        _swallowRightUp = false;
         _active = null;
     }
 
@@ -129,6 +145,15 @@ internal sealed unsafe class MacMouseCapture : IMouseCapture
                 var released = CoreGraphics.CGEventGetLocation(cgEvent);
                 Stop();
                 onUp?.Invoke(new ScreenPoint(released.X, released.Y));
+                return true;
+            case CoreGraphics.EventRightMouseDown when _onRightDown is { } rightHandler:
+                var rightLocation = CoreGraphics.CGEventGetLocation(cgEvent);
+                _swallowRightUp = rightHandler(new ScreenPoint(rightLocation.X, rightLocation.Y));
+                return _swallowRightUp;
+            case CoreGraphics.EventRightMouseUp when _swallowRightUp:
+                var onRightUp = _onRightUp;
+                Stop();
+                onRightUp?.Invoke();
                 return true;
             default:
                 return false;

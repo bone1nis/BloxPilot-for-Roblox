@@ -1,13 +1,71 @@
+using System.Net;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace RobloxAntiAfk.Core.Services;
 
+public enum TelegramLookupStatus
+{
+    Found,
+
+    /// <summary>Токен подходит, но новых сообщений боту нет.</summary>
+    NoMessages,
+
+    TokenRejected,
+
+    /// <summary>Сообщения бота уже забирает другая программа или сервис.</summary>
+    Conflict,
+
+    /// <summary>До Telegram не удалось достучаться, либо ответил кто-то другой.</summary>
+    Unreachable,
+}
+
+public sealed record TelegramLookup(TelegramLookupStatus Status, string? ChatId = null, string? BotName = null);
+
 /// <summary>Пишет в Telegram через бота пользователя. Адрес с токеном никуда не выводится, поэтому ошибки только считаются неудачей.</summary>
 public sealed partial class TelegramNotifier(HttpClient http)
 {
     private const string ApiRoot = "https://api.telegram.org/bot";
+    private static readonly TimeSpan ConnectAttemptTimeout = TimeSpan.FromSeconds(5);
+    private static readonly string[] UpdatesWithChat = ["message", "edited_message", "my_chat_member"];
+
+    /// <summary>
+    /// .NET пробует адреса сервера по очереди. Если IPv6 в сети молча не работает, до IPv4 он доходит слишком поздно,
+    /// поэтому первым идёт IPv4, а на каждый адрес отведено ограниченное время.
+    /// </summary>
+    public static HttpClient CreateHttpClient(TimeSpan timeout) =>
+        new(new SocketsHttpHandler { ConnectCallback = ConnectAsync }) { Timeout = timeout };
+
+    private static async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext context, CancellationToken cancellation)
+    {
+        var addresses = await Dns.GetHostAddressesAsync(context.DnsEndPoint.Host, cancellation);
+        Exception? lastError = null;
+        foreach (var address in addresses.OrderBy(address => address.AddressFamily == AddressFamily.InterNetwork ? 0 : 1))
+        {
+            var socket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+            using var attempt = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            attempt.CancelAfter(ConnectAttemptTimeout);
+            try
+            {
+                await socket.ConnectAsync(address, context.DnsEndPoint.Port, attempt.Token);
+                return new NetworkStream(socket, ownsSocket: true);
+            }
+            catch (Exception exception) when (!cancellation.IsCancellationRequested && exception is SocketException or OperationCanceledException)
+            {
+                socket.Dispose();
+                lastError = exception;
+            }
+            catch
+            {
+                socket.Dispose();
+                throw;
+            }
+        }
+
+        throw new HttpRequestException("Нет связи с сервером.", lastError);
+    }
 
     public static bool IsValidToken(string? token) => token is not null && TokenFormat().IsMatch(token);
 
@@ -29,40 +87,73 @@ public sealed partial class TelegramNotifier(HttpClient http)
         }
     }
 
-    /// <summary>Находит чат по последнему сообщению, которое пользователь написал своему боту.</summary>
-    public async Task<string?> FindChatIdAsync(string token)
+    /// <summary>Находит чат по последнему сообщению, которое пользователь написал своему боту, а если не нашёл, объясняет почему.</summary>
+    public async Task<TelegramLookup> FindChatAsync(string token)
     {
         if (!IsValidToken(token))
         {
-            return null;
+            return new TelegramLookup(TelegramLookupStatus.TokenRejected);
         }
 
         try
         {
             using var response = await http.GetAsync($"{ApiRoot}{token}/getUpdates");
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.NotFound)
+            {
+                return new TelegramLookup(TelegramLookupStatus.TokenRejected);
+            }
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                return new TelegramLookup(TelegramLookupStatus.Conflict);
+            }
+
             if (!response.IsSuccessStatusCode)
             {
-                return null;
+                return new TelegramLookup(TelegramLookupStatus.Unreachable);
             }
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            string? chatId = null;
-            foreach (var update in document.RootElement.GetProperty("result").EnumerateArray())
+            return LastChatId(document) is { } chatId
+                ? new TelegramLookup(TelegramLookupStatus.Found, chatId)
+                : new TelegramLookup(TelegramLookupStatus.NoMessages, BotName: await FindBotNameAsync(token));
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            return new TelegramLookup(TelegramLookupStatus.Unreachable);
+        }
+    }
+
+    private static string? LastChatId(JsonDocument document)
+    {
+        string? chatId = null;
+        foreach (var update in document.RootElement.GetProperty("result").EnumerateArray())
+        {
+            foreach (var kind in UpdatesWithChat)
             {
-                if (update.TryGetProperty("message", out var message)
-                    && message.TryGetProperty("chat", out var chat)
+                if (update.TryGetProperty(kind, out var content)
+                    && content.TryGetProperty("chat", out var chat)
                     && chat.TryGetProperty("id", out var id))
                 {
                     chatId = id.GetRawText();
                 }
             }
-
-            return chatId;
         }
-        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException or KeyNotFoundException or InvalidOperationException)
+
+        return chatId;
+    }
+
+    /// <summary>Имя бота нужно, чтобы пользователь сверил, тому ли боту написал.</summary>
+    private async Task<string?> FindBotNameAsync(string token)
+    {
+        using var response = await http.GetAsync($"{ApiRoot}{token}/getMe");
+        if (!response.IsSuccessStatusCode)
         {
             return null;
         }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("result").TryGetProperty("username", out var name) ? name.GetString() : null;
     }
 
     private sealed record SendMessageRequest(

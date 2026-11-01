@@ -71,13 +71,16 @@ public interface IMouseCapture
     /// Начинает перехват. Если <paramref name="onMouseDown"/> вернул true, это нажатие и его отпускание
     /// не доходят до других приложений. Все остальные клики проходят как обычно.
     /// </summary>
-    bool Start(Func<ScreenPoint, bool> onMouseDown);
+    /// <param name="onMouseDown">Вызывается при нажатии.</param>
+    /// <param name="includeRightButton">Правая кнопка обрабатывается так же, как левая.</param>
+    bool Start(Func<ScreenPoint, bool> onMouseDown, bool includeRightButton = false);
 
     /// <summary>
     /// То же самое, но сообщает о движении с зажатой кнопкой и об отпускании.
     /// Движение проходит в другие приложения: без нажатия оно ничего в них не делает.
+    /// Правая кнопка отменяет выбор: она никуда не доходит, а перехват снимается при её отпускании.
     /// </summary>
-    bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp);
+    bool StartDrag(Func<ScreenPoint, bool> onMouseDown, Action<ScreenPoint> onMouseMove, Action<ScreenPoint> onMouseUp, Action onRightClick);
 
     void Stop();
 }
@@ -123,7 +126,7 @@ public interface IDisconnectWatcher
     /// <summary>Запоминает текущее место в журнале: прошлые отключения не считаются.</summary>
     void Arm();
 
-    /// <summary>True, если с прошлой проверки появилась запись об отключении от сервера.</summary>
+    /// <summary>True один раз на отключение: клиент написал о нём и за время ожидания не зашёл на другой сервер.</summary>
     bool Poll();
 }
 
@@ -178,6 +181,7 @@ public sealed record PlatformServices(
     IRobloxLauncher Launcher,
     IDisconnectWatcher Disconnects,
     IGlobalHotkey TranslationHotkey,
+    IGlobalHotkey CancelKey,
     IScreenTextReader TextReader,
     IOverlaySupport Overlay,
     TimeSpan WindowSettleDelay);

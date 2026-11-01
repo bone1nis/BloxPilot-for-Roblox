@@ -208,10 +208,10 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         CanConnectTelegram = false;
         ShowTelegramResult("Проверяю...");
-        var chatId = await _telegram.FindChatIdAsync(token);
-        if (chatId is null)
+        var lookup = await _telegram.FindChatAsync(token);
+        if (lookup.ChatId is not { } chatId)
         {
-            ShowTelegramResult("Не нашла твой чат. Напиши боту любое сообщение и нажми ещё раз. Если не поможет, проверь токен и интернет.");
+            ShowTelegramResult(TelegramProblemText(lookup));
         }
         else
         {
@@ -265,6 +265,14 @@ public sealed partial class SettingsViewModel : ObservableObject
             _engine.UpdateSettings(change);
         }
     }
+
+    private static string TelegramProblemText(TelegramLookup lookup) => lookup.Status switch
+    {
+        TelegramLookupStatus.TokenRejected => "Telegram не принял этот токен. Скопируй его из сообщения @BotFather заново и целиком.",
+        TelegramLookupStatus.Conflict => "Сообщения этого бота уже забирает другая программа или сервис. Создай для уведомлений отдельного бота.",
+        TelegramLookupStatus.NoMessages => $"Токен подходит, но новых сообщений нет. Открой {(lookup.BotName is { } name ? $"@{name}" : "своего бота")}, напиши любое сообщение и сразу нажми ещё раз: Telegram хранит их только сутки.",
+        _ => "Приложение не смогло связаться с Telegram (api.telegram.org). Интернет может работать, а этот адрес бывает закрыт у провайдера. Если Telegram у тебя работает через VPN, включи VPN для всего компьютера и нажми ещё раз.",
+    };
 
     private void ShowTelegramResult(string text)
     {

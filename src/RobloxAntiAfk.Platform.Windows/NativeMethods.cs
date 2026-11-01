@@ -144,6 +144,7 @@ internal static unsafe partial class NativeMethods
     public const uint ModifierNoRepeat = 0x4000;
     public const uint VirtualKeyF8 = 0x77;
     public const uint VirtualKeyX = 0x58;
+    public const uint VirtualKeyEscape = 0x1B;
     public const int ExtendedStyleIndex = -20;
     public const nint StyleTransparent = 0x00000020;
     public const nint StyleToolWindow = 0x00000080;
