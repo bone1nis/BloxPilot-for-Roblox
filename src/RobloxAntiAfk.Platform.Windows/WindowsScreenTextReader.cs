@@ -1,5 +1,6 @@
 using RobloxAntiAfk.Core.Abstractions;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 
 namespace RobloxAntiAfk.Platform.Windows;
 
@@ -45,7 +46,7 @@ internal sealed unsafe class WindowsScreenTextReader(ITextRecognizer? recognizer
     {
         if (recognizer is null)
         {
-            return TextReadResult.Of(TextReadStatus.Failed, "Распознавание не входит в эту сборку.");
+            return TextReadResult.Of(TextReadStatus.Failed, L.T("Распознавание не входит в эту сборку."));
         }
 
         try

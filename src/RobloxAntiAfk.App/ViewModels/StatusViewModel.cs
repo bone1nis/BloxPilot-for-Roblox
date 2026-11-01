@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RobloxAntiAfk.App.Presentation;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using RobloxAntiAfk.Core.Services;
 
 namespace RobloxAntiAfk.App.ViewModels;
@@ -17,13 +18,14 @@ public sealed record ActivityItem(string Time, string Text, ActivitySeverity Sev
 public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableObject
 {
     private IReadOnlyList<ActivityEntry> _shownActivity = [];
+    private AppLanguage _shownLanguage = L.Current;
 
-    [ObservableProperty] private string _title = "Запускаюсь";
+    [ObservableProperty] private string _title = L.T("Запускаюсь");
     [ObservableProperty] private string _subtitle = "";
     [ObservableProperty] private string _timeText = "";
     [ObservableProperty] private bool _showCountdown;
     [ObservableProperty] private double _ringSweep = 360;
-    [ObservableProperty] private string _runButtonText = "Запустить";
+    [ObservableProperty] private string _runButtonText = L.T("Запустить");
     [ObservableProperty] private bool _canToggleRunning;
     [ObservableProperty] private bool _canRunNow;
     [ObservableProperty] private bool _needsPermission;
@@ -43,13 +45,13 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
 
         (Title, Subtitle, var word) = state switch
         {
-            EngineState.Acting => ("Выполняю", "Сейчас вернусь обратно", "Сейчас"),
-            EngineState.PickingPoint => ("Выбери точку", "Кликни один раз в окне Roblox", "Точка"),
-            EngineState.RecordingMacro => ("Идёт запись", RecordingSubtitle(snapshot), "Запись"),
-            EngineState.Stopped => ("Выключено", "Нажми «Запустить», когда будешь готова", "Выкл"),
-            EngineState.WaitingForRoblox => ("Жду Roblox", "Запусти игру, и я начну работать", "Жду"),
-            EngineState.PermissionRequired => ("Нужно разрешение", "Без него macOS не даст ничего нажать", "Стоп"),
-            _ => ("Работает", RunningSubtitle(snapshot), (string?)null),
+            EngineState.Acting => (L.T("Выполняю"), L.T("Сейчас вернусь обратно"), L.T("Сейчас")),
+            EngineState.PickingPoint => (L.T("Выбери точку"), L.T("Кликни один раз в окне Roblox"), L.T("Точка")),
+            EngineState.RecordingMacro => (L.T("Идёт запись"), RecordingSubtitle(snapshot), L.T("Запись")),
+            EngineState.Stopped => (L.T("Выключено"), L.T("Нажми «Запустить», когда будешь готова"), L.T("Выкл")),
+            EngineState.WaitingForRoblox => (L.T("Жду Roblox"), L.T("Запусти игру, и я начну работать"), L.T("Жду")),
+            EngineState.PermissionRequired => (L.T("Нужно разрешение"), L.T("Без него macOS не даст ничего нажать"), L.T("Стоп")),
+            _ => (L.T("Работает"), RunningSubtitle(snapshot), (string?)null),
         };
 
         ShowCountdown = word is null;
@@ -60,7 +62,7 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
         IsWaiting = state is EngineState.WaitingForRoblox or EngineState.PickingPoint or EngineState.RecordingMacro;
         IsProblem = state == EngineState.PermissionRequired;
 
-        RunButtonText = state == EngineState.Stopped ? "Запустить" : "Остановить";
+        RunButtonText = state == EngineState.Stopped ? L.T("Запустить") : L.T("Остановить");
         CanToggleRunning = state is not (EngineState.Acting or EngineState.PickingPoint or EngineState.RecordingMacro);
         CanRunNow = state == EngineState.Running;
         NeedsPermission = state == EngineState.PermissionRequired;
@@ -81,23 +83,24 @@ public sealed partial class StatusViewModel(AntiAfkEngine engine) : ObservableOb
 
     private static string RunningSubtitle(EngineSnapshot snapshot)
     {
-        var text = $"{Texts.ActionSummary(snapshot.Settings)} раз в {Texts.Minutes(snapshot.Settings.IntervalMinutes)}";
-        return snapshot.WindowCount > 1 ? $"{text} · окон: {snapshot.WindowCount}" : text;
+        var text = L.F("{0} раз в {1}", Texts.ActionSummary(snapshot.Settings), Texts.Minutes(snapshot.Settings.IntervalMinutes));
+        return snapshot.WindowCount > 1 ? L.F("{0} · окон: {1}", text, snapshot.WindowCount) : text;
     }
 
     private static string RecordingSubtitle(EngineSnapshot snapshot) =>
-        $"Действуй в окне Roblox, осталось {Texts.Duration(RoundUp(snapshot.RecordingLeft))}";
+        L.F("Действуй в окне Roblox, осталось {0}", Texts.Duration(RoundUp(snapshot.RecordingLeft)));
 
     private static TimeSpan RoundUp(TimeSpan time) => TimeSpan.FromSeconds(Math.Ceiling(time.TotalSeconds));
 
     private void ApplyActivity(IReadOnlyList<ActivityEntry> entries)
     {
-        if (entries.SequenceEqual(_shownActivity))
+        if (entries.SequenceEqual(_shownActivity) && _shownLanguage == L.Current)
         {
             return;
         }
 
         _shownActivity = entries;
+        _shownLanguage = L.Current;
         Activity.Clear();
         foreach (var entry in entries)
         {

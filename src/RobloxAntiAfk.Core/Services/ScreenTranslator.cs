@@ -1,5 +1,6 @@
 using RobloxAntiAfk.Core.Abstractions;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 
 namespace RobloxAntiAfk.Core.Services;
 
@@ -26,7 +27,7 @@ public interface ITranslationOverlay
 public sealed class ScreenTranslator
 {
     public const double MinAreaSize = 12;
-    private const string SelectionPrompt = "Зажми левую кнопку мыши и обведи текст. Отмена: Esc или правая кнопка";
+    private static string SelectionPrompt => L.T("Зажми левую кнопку мыши и обведи текст. Отмена: Esc или правая кнопка");
     private static readonly TimeSpan SelectionTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan MessageDuration = TimeSpan.FromSeconds(4);
@@ -718,7 +719,7 @@ public sealed class ScreenTranslator
         _messageUntil = null;
         _translated = translated ?? "";
         _shownIsError = translated is null;
-        _shownText = translated ?? $"{text}\n\nПеревод сейчас недоступен: проверь интернет.";
+        _shownText = translated ?? L.F("{0}\n\nПеревод сейчас недоступен: проверь интернет.", text);
         ShowOnOverlay(area, bounds, _shownText, _shownIsError);
         ArmDismiss();
         SetStatus(translated is null ? TranslationStatus.ShownOriginal : TranslationStatus.Shown);
@@ -782,11 +783,11 @@ public sealed class ScreenTranslator
 
     private static string? MessageFor(TranslationStatus status) => status switch
     {
-        TranslationStatus.NoText => "Текст не найден в выбранной области",
-        TranslationStatus.AreaTooSmall => "Область слишком маленькая, выбери её заново",
-        TranslationStatus.EmptyCapture => "Снимок окна пустой. Переключи Roblox в оконный режим",
-        TranslationStatus.ReadFailed => "Не удалось прочитать текст",
-        TranslationStatus.RobloxNotInFront => "Не удалось вывести Roblox вперёд",
+        TranslationStatus.NoText => L.T("Текст не найден в выбранной области"),
+        TranslationStatus.AreaTooSmall => L.T("Область слишком маленькая, выбери её заново"),
+        TranslationStatus.EmptyCapture => L.T("Снимок окна пустой. Переключи Roblox в оконный режим"),
+        TranslationStatus.ReadFailed => L.T("Не удалось прочитать текст"),
+        TranslationStatus.RobloxNotInFront => L.T("Не удалось вывести Roblox вперёд"),
         _ => null,
     };
 

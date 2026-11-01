@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:RobloxAntiAfk.App.Presentation"
              xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
              xmlns:views="using:RobloxAntiAfk.App.Views"
              x:Class="RobloxAntiAfk.App.Views.SettingsView"
@@ -15,10 +16,19 @@
 
   <StackPanel Spacing="8">
     <Border Classes="card">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="strong" Text="{l:T 'Язык / Language'}" />
+        <ItemsControl ItemsSource="{Binding Languages}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
+        <TextBlock Classes="strong" Text="{l:T 'Тема'}" />
+        <ItemsControl ItemsSource="{Binding Themes}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
       <StackPanel Spacing="4">
         <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Classes="strong" Text="Как часто" />
-          <TextBlock Grid.Column="1" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" Text="{Binding IntervalText}" />
+          <TextBlock Classes="strong" Text="{l:T 'Как часто'}" />
+          <TextBlock Grid.Column="1" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" Text="{Binding IntervalText}" />
         </Grid>
         <Slider Minimum="1" Maximum="19" TickFrequency="1" IsSnapToTickEnabled="True"
                 Value="{Binding IntervalMinutes}" />
@@ -28,7 +38,7 @@
 
     <Border Classes="card">
       <StackPanel Spacing="8">
-        <TextBlock Classes="strong" Text="Что делать" />
+        <TextBlock Classes="strong" Text="{l:T 'Что делать'}" />
         <ItemsControl ItemsSource="{Binding Actions}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
         <TextBlock Classes="muted small" Classes.warning="{Binding IsActionRisky}" Text="{Binding ActionHint}" />
       </StackPanel>
@@ -36,7 +46,7 @@
 
     <Border Classes="card" IsVisible="{Binding ShowTarget}">
       <StackPanel Spacing="8">
-        <TextBlock Classes="strong" Text="Куда кликать" />
+        <TextBlock Classes="strong" Text="{l:T 'Куда кликать'}" />
         <ItemsControl ItemsSource="{Binding Targets}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
         <Button HorizontalAlignment="Left" Content="{Binding PointButtonText}"
                 IsVisible="{Binding ShowPointButton}" IsEnabled="{Binding CanUsePointButton}"
@@ -47,7 +57,7 @@
 
     <Border Classes="card" IsVisible="{Binding ShowKeys}">
       <StackPanel Spacing="8">
-        <TextBlock Classes="strong" Text="Какая клавиша" />
+        <TextBlock Classes="strong" Text="{l:T 'Какая клавиша'}" />
         <ItemsControl ItemsSource="{Binding Keys}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
         <TextBlock Classes="muted small" Text="{Binding KeyHint}" />
       </StackPanel>
@@ -55,7 +65,7 @@
 
     <Border Classes="card" IsVisible="{Binding ShowMacro}">
       <StackPanel Spacing="8">
-        <TextBlock Classes="strong" Text="Макрос" />
+        <TextBlock Classes="strong" Text="{l:T 'Макрос'}" />
         <Button HorizontalAlignment="Left" Content="{Binding MacroButtonText}"
                 IsEnabled="{Binding CanUseMacroButton}" Command="{Binding MacroButtonCommand}" />
         <TextBlock Classes="muted small" Text="{Binding MacroHint}" />
@@ -64,17 +74,17 @@
 
     <Border Classes="card">
       <StackPanel Spacing="8">
-        <TextBlock Classes="strong" Text="Сбрасывать персонажа" />
+        <TextBlock Classes="strong" Text="{l:T 'Сбрасывать персонажа'}" />
         <ItemsControl ItemsSource="{Binding ResetChoices}" ItemsPanel="{StaticResource WrapChoices}" ItemTemplate="{StaticResource ChoiceTemplate}" />
-        <TextBlock Classes="muted small warning" Text="Нажимает Esc, R и Enter вместе с очередным действием. Персонаж вернётся на точку появления. Если в игре сброс запрещён, меню может остаться открытым." />
+        <TextBlock Classes="muted small warning" Text="{l:T 'Нажимает Esc, R и Enter вместе с очередным действием. Персонаж вернётся на точку появления. Если в игре сброс запрещён, меню может остаться открытым.'}" />
       </StackPanel>
     </Border>
 
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Все окна Roblox" />
-          <TextBlock Classes="muted small" Text="Если открыто несколько окон, действие будет в каждом по очереди" />
+          <TextBlock Classes="strong" Text="{l:T 'Все окна Roblox'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Если открыто несколько окон, действие будет в каждом по очереди'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding AllWindows}" />
       </Grid>
@@ -83,8 +93,8 @@
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Пропускать, когда идёт игра" />
-          <TextBlock Classes="muted small" Text="Ничего не делать, если Roblox открыт и в последнюю минуту был ввод" />
+          <TextBlock Classes="strong" Text="{l:T 'Пропускать, когда идёт игра'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Ничего не делать, если Roblox открыт и в последнюю минуту был ввод'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding SkipWhilePlaying}" />
       </Grid>
@@ -93,8 +103,8 @@
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Не давать компьютеру уснуть" />
-          <TextBlock Classes="muted small" Text="Экран и компьютер не засыпают, пока приложение запущено" />
+          <TextBlock Classes="strong" Text="{l:T 'Не давать компьютеру уснуть'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Экран и компьютер не засыпают, пока приложение запущено'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding KeepAwake}" />
       </Grid>
@@ -103,8 +113,8 @@
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Прятать Roblox между действиями" />
-          <TextBlock Classes="muted small" Text="Окно будет свёрнуто и покажется только на время действия. Окно, в котором ты сейчас, не прячется" />
+          <TextBlock Classes="strong" Text="{l:T 'Прятать Roblox между действиями'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Окно будет свёрнуто и покажется только на время действия. Окно, в котором ты сейчас, не прячется'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding HideBetweenActions}" />
       </Grid>
@@ -113,8 +123,8 @@
     <Border Classes="card" IsVisible="{Binding ShowMute}">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Выключить звук Roblox" />
-          <TextBlock Classes="muted small" Text="Звук выключается, пока приложение запущено, и возвращается после остановки" />
+          <TextBlock Classes="strong" Text="{l:T 'Выключить звук Roblox'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Звук выключается, пока приложение запущено, и возвращается после остановки'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding MuteRoblox}" />
       </Grid>
@@ -123,23 +133,23 @@
     <Border Classes="card">
       <StackPanel Spacing="8">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-          <TextBlock Classes="strong" VerticalAlignment="Center" Text="Заходить обратно после отключения" />
+          <TextBlock Classes="strong" VerticalAlignment="Center" Text="{l:T 'Заходить обратно после отключения'}" />
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding ReconnectEnabled}" />
         </Grid>
-        <TextBox PlaceholderText="Ссылка на игру или приватный сервер" Text="{Binding GameLink}" />
+        <TextBox PlaceholderText="{l:T 'Ссылка на игру или приватный сервер'}" Text="{Binding GameLink}" />
         <TextBlock Classes="muted small" Classes.warning="{Binding IsReconnectLinkBad}" Text="{Binding ReconnectHint}" />
       </StackPanel>
     </Border>
 
     <Border Classes="card">
       <StackPanel Spacing="8">
-        <TextBlock Classes="strong" Text="Уведомления в Telegram" />
+        <TextBlock Classes="strong" Text="{l:T 'Уведомления в Telegram'}" />
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-          <TextBox PlaceholderText="Токен бота" PasswordChar="•" Text="{Binding TelegramToken}" />
-          <Button Grid.Column="1" Content="Подключить" IsEnabled="{Binding CanConnectTelegram}" Command="{Binding ConnectTelegramCommand}" />
+          <TextBox PlaceholderText="{l:T 'Токен бота'}" PasswordChar="•" Text="{Binding TelegramToken}" />
+          <Button Grid.Column="1" Content="{l:T 'Подключить'}" IsEnabled="{Binding CanConnectTelegram}" Command="{Binding ConnectTelegramCommand}" />
         </Grid>
         <TextBlock Classes="muted small" Text="{Binding TelegramHint}" />
-        <TextBox PlaceholderText="Адрес посредника, если Telegram работает только с VPN" Text="{Binding TelegramRelayUrl}" />
+        <TextBox PlaceholderText="{l:T 'Адрес посредника, если Telegram работает только с VPN'}" Text="{Binding TelegramRelayUrl}" />
         <TextBlock Classes="muted small" Classes.warning="{Binding IsTelegramRelayBad}" Text="{Binding TelegramRelayHint}" />
       </StackPanel>
     </Border>
@@ -147,8 +157,8 @@
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Прятать в трей при закрытии" />
-          <TextBlock Classes="muted small" Text="Крестик не выключает приложение, а убирает его к значку. Выйти можно через меню значка" />
+          <TextBlock Classes="strong" Text="{l:T 'Прятать в трей при закрытии'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Крестик не выключает приложение, а убирает его к значку. Выйти можно через меню значка'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}" />
       </Grid>
@@ -157,8 +167,8 @@
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Открывать вместе с системой" />
-          <TextBlock Classes="muted small" Text="Приложение откроется после входа в систему" />
+          <TextBlock Classes="strong" Text="{l:T 'Открывать вместе с системой'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Приложение откроется после входа в систему'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding StartWithSystem}" />
       </Grid>
@@ -167,8 +177,8 @@
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel>
-          <TextBlock Classes="strong" Text="Запускать сразу при открытии" />
-          <TextBlock Classes="muted small" Text="Не ждать кнопки «Запустить». По умолчанию приложение открывается выключенным" />
+          <TextBlock Classes="strong" Text="{l:T 'Запускать сразу при открытии'}" />
+          <TextBlock Classes="muted small" Text="{l:T 'Не ждать кнопки «Запустить». По умолчанию приложение открывается выключенным'}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding RunOnOpen}" />
       </Grid>
@@ -176,12 +186,12 @@
 
     <Border Classes="card">
       <StackPanel>
-        <TextBlock Classes="strong" Text="Горячая клавиша" />
+        <TextBlock Classes="strong" Text="{l:T 'Горячая клавиша'}" />
         <TextBlock Classes="muted small" Text="{Binding HotkeyHint}" />
         <views:HotkeyEditor DataContext="{Binding HotkeyEditor}" />
       </StackPanel>
     </Border>
 
-    <Button HorizontalAlignment="Left" Margin="0,6,0,0" Content="Вернуть по умолчанию" Command="{Binding ResetToDefaultsCommand}" />
+    <Button HorizontalAlignment="Left" Margin="0,6,0,0" Content="{l:T 'Вернуть по умолчанию'}" Command="{Binding ResetToDefaultsCommand}" />
   </StackPanel>
 </UserControl>

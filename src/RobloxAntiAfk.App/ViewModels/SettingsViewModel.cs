@@ -2,13 +2,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RobloxAntiAfk.App.Presentation;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using RobloxAntiAfk.Core.Services;
 
 namespace RobloxAntiAfk.App.ViewModels;
 
 public sealed partial class SettingsViewModel : ObservableObject
 {
-    private const string DefaultMark = " · по умолчанию";
+    private static string DefaultMark => L.T(" · по умолчанию");
     private const int TightIntervalMinutes = 16;
 
     private static readonly GameKey[] SelectableKeys =
@@ -74,25 +75,36 @@ public sealed partial class SettingsViewModel : ObservableObject
         Actions = Enum.GetValues<AfkAction>()
             .Select(action => new ChoiceViewModel<AfkAction>(
                 action,
-                Texts.ActionName(action) + (action == AfkAction.RightClick ? DefaultMark : ""),
+                () => Texts.ActionName(action) + (action == AfkAction.RightClick ? DefaultMark : ""),
                 value => Change(settings => settings with { Action = value })))
             .ToArray();
         Keys = SelectableKeys
             .Select(key => new ChoiceViewModel<GameKey>(
                 key,
-                Texts.KeyName(key) + (key == GameKey.Space ? DefaultMark : ""),
+                () => Texts.KeyName(key) + (key == GameKey.Space ? DefaultMark : ""),
                 value => Change(settings => settings with { Key = value })))
             .ToArray();
         ResetChoices = AppSettings.ResetChoices
             .Select(minutes => new ChoiceViewModel<int>(
                 minutes,
-                minutes == 0 ? "Не сбрасывать" + DefaultMark : $"Раз в {Texts.Minutes(minutes)}",
+                () => minutes == 0 ? L.T("Не сбрасывать") + DefaultMark : L.F("Раз в {0}", Texts.Minutes(minutes)),
                 value => Change(settings => settings with { ResetMinutes = value })))
             .ToArray();
         Targets =
         [
-            new ChoiceViewModel<bool>(false, "По центру окна" + DefaultMark, _ => Change(settings => settings with { ClickPoint = null })),
-            new ChoiceViewModel<bool>(true, "Своя точка", _ => ChooseOwnPoint()),
+            new ChoiceViewModel<bool>(false, () => L.T("По центру окна") + DefaultMark, _ => Change(settings => settings with { ClickPoint = null })),
+            new ChoiceViewModel<bool>(true, () => L.T("Своя точка"), _ => ChooseOwnPoint()),
+        ];
+        Languages =
+        [
+            new ChoiceViewModel<AppLanguage>(AppLanguage.Russian, () => L.T("Русский"), value => Change(settings => settings with { Language = value })),
+            new ChoiceViewModel<AppLanguage>(AppLanguage.English, () => "English", value => Change(settings => settings with { Language = value })),
+        ];
+        Themes =
+        [
+            new ChoiceViewModel<AppTheme>(AppTheme.Dark, () => L.T("Тёмная"), value => Change(settings => settings with { Theme = value })),
+            new ChoiceViewModel<AppTheme>(AppTheme.Light, () => L.T("Светлая"), value => Change(settings => settings with { Theme = value })),
+            new ChoiceViewModel<AppTheme>(AppTheme.System, () => L.T("Как в системе"), value => Change(settings => settings with { Theme = value })),
         ];
     }
 
@@ -100,7 +112,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     public IReadOnlyList<ChoiceViewModel<GameKey>> Keys { get; }
     public IReadOnlyList<ChoiceViewModel<int>> ResetChoices { get; }
     public IReadOnlyList<ChoiceViewModel<bool>> Targets { get; }
-    public string KeyHint => "Раскладка не важна: W нажмётся и на русской.";
+    public IReadOnlyList<ChoiceViewModel<AppLanguage>> Languages { get; }
+    public IReadOnlyList<ChoiceViewModel<AppTheme>> Themes { get; }
+    public string KeyHint => L.T("Раскладка не важна: W нажмётся и на русской.");
 
     public void Apply(EngineSnapshot snapshot)
     {
@@ -109,11 +123,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         var settings = snapshot.Settings;
 
         IntervalMinutes = settings.IntervalMinutes;
-        IntervalText = $"раз в {Texts.Minutes(settings.IntervalMinutes)}";
+        IntervalText = L.F("раз в {0}", Texts.Minutes(settings.IntervalMinutes));
         IsIntervalTight = settings.IntervalMinutes >= TightIntervalMinutes;
         IntervalHint = IsIntervalTight
-            ? "Запас маленький: Roblox обычно кикает примерно через 20 минут."
-            : "По умолчанию раз в 5 минут. Roblox обычно кикает примерно через 20 минут.";
+            ? L.T("Запас маленький: Roblox обычно кикает примерно через 20 минут.")
+            : L.T("По умолчанию раз в 5 минут. Roblox обычно кикает примерно через 20 минут.");
 
         foreach (var choice in Actions)
         {
@@ -135,6 +149,16 @@ public sealed partial class SettingsViewModel : ObservableObject
             choice.IsSelected = choice.Value == settings.ResetMinutes;
         }
 
+        foreach (var choice in Languages)
+        {
+            choice.IsSelected = choice.Value == settings.Language;
+        }
+
+        foreach (var choice in Themes)
+        {
+            choice.IsSelected = choice.Value == settings.Theme;
+        }
+
         var effect = Texts.Effect(settings.Action);
         ActionHint = effect.Text;
         IsActionRisky = effect.IsWarning;
@@ -143,7 +167,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         var isPicking = _state == EngineState.PickingPoint;
         ShowPointButton = settings.ClickPoint is not null || isPicking;
-        PointButtonText = isPicking ? "Отменить выбор" : "Выбрать другую точку";
+        PointButtonText = isPicking ? L.T("Отменить выбор") : L.T("Выбрать другую точку");
         CanUsePointButton = _state is EngineState.PickingPoint or EngineState.Running or EngineState.Stopped;
         TargetHint = TargetHintText(settings, isPicking);
 
@@ -153,7 +177,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         var isRecording = _state == EngineState.RecordingMacro;
         ShowMacro = settings.Action == AfkAction.Macro;
-        MacroButtonText = isRecording ? "Остановить запись" : settings.Macro is null ? "Записать макрос" : "Записать заново";
+        MacroButtonText = isRecording ? L.T("Остановить запись") : settings.Macro is null ? L.T("Записать макрос") : L.T("Записать заново");
         CanUseMacroButton = _state is EngineState.RecordingMacro or EngineState.Running or EngineState.Stopped;
         MacroHint = MacroHintText(snapshot, isRecording);
 
@@ -164,8 +188,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         StartWithSystem = settings.StartWithSystem;
         RunOnOpen = settings.RunOnOpen;
         HotkeyHint = snapshot.IsHotkeyActive
-            ? $"{snapshot.HotkeyLabel} запускает и останавливает приложение из любого окна, а во время записи останавливает запись."
-            : $"Сочетание {snapshot.HotkeyLabel} занять не удалось: его держит другая программа или система. Поставь другое.";
+            ? L.F("{0} запускает и останавливает приложение из любого окна, а во время записи останавливает запись.", snapshot.HotkeyLabel)
+            : L.F("Сочетание {0} занять не удалось: его держит другая программа или система. Поставь другое.", snapshot.HotkeyLabel);
         HotkeyEditor.Refresh();
 
         ReconnectEnabled = settings.ReconnectEnabled;
@@ -176,15 +200,15 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         TelegramToken = settings.TelegramToken;
         TelegramHint = _telegramResult ?? (settings.TelegramChatId.Length > 0
-            ? "Подключено. Об отключении бот напишет, пока приложение открыто, о закрытии окна пока оно запущено. Без интернета сообщение уйдёт, когда он появится."
-            : "Создай бота через @BotFather, вставь его токен, напиши боту любое сообщение и нажми «Подключить». Токен хранится на этом компьютере в файле настроек.");
+            ? L.T("Подключено. Об отключении бот напишет, пока приложение открыто, о закрытии окна пока оно запущено. Без интернета сообщение уйдёт, когда он появится.")
+            : L.T("Создай бота через @BotFather, вставь его токен, напиши боту любое сообщение и нажми «Подключить». Токен хранится на этом компьютере в файле настроек."));
         TelegramRelayUrl = settings.TelegramRelayUrl;
         IsTelegramRelayBad = settings.TelegramRelayUrl.Length > 0 && !TelegramNotifier.IsValidRelayUrl(settings.TelegramRelayUrl);
         TelegramRelayHint = settings.TelegramRelayUrl.Length == 0
-            ? "Необязательно. Посредник передаёт сообщения бота, когда Telegram закрыт без VPN. Как его создать, написано на вкладке «Как это работает»."
+            ? L.T("Необязательно. Посредник передаёт сообщения бота, когда Telegram закрыт без VPN. Как его создать, написано на вкладке «Как это работает».")
             : IsTelegramRelayBad
-                ? "Нужен полный адрес вида https://имя.workers.dev. Пока сообщения идут напрямую."
-                : "Сообщения идут через этот адрес, и токен бота проходит через него, поэтому указывай только своего посредника. Нажми «Подключить», чтобы проверить.";
+                ? L.T("Нужен полный адрес вида https://имя.workers.dev. Пока сообщения идут напрямую.")
+                : L.T("Сообщения идут через этот адрес, и токен бота проходит через него, поэтому указывай только своего посредника. Нажми «Подключить», чтобы проверить.");
         _isApplying = false;
     }
 
@@ -220,12 +244,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         var token = _engine.Snapshot.Settings.TelegramToken;
         if (!TelegramNotifier.IsValidToken(token))
         {
-            ShowTelegramResult("Это не похоже на токен. Скопируй его из сообщения @BotFather целиком.");
+            ShowTelegramResult(L.T("Это не похоже на токен. Скопируй его из сообщения @BotFather целиком."));
             return;
         }
 
         CanConnectTelegram = false;
-        ShowTelegramResult("Проверяю...");
+        ShowTelegramResult(L.T("Проверяю..."));
         var lookup = await _telegram.FindChatAsync(token);
         if (lookup.ChatId is not { } chatId)
         {
@@ -234,8 +258,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         else
         {
             _engine.UpdateSettings(settings => settings with { TelegramChatId = chatId });
-            var isSent = await _telegram.SendAsync(token, chatId, "BloxPilot подключён. Сюда придёт сообщение, если Roblox отключится или закроется.");
-            ShowTelegramResult(isSent ? "Готово: проверочное сообщение отправлено." : "Чат найден, но сообщение не отправилось. Проверь интернет и нажми ещё раз.");
+            var isSent = await _telegram.SendAsync(token, chatId, L.T("BloxPilot подключён. Сюда придёт сообщение, если Roblox отключится или закроется."));
+            ShowTelegramResult(isSent ? L.T("Готово: проверочное сообщение отправлено.") : L.T("Чат найден, но сообщение не отправилось. Проверь интернет и нажми ещё раз."));
         }
 
         CanConnectTelegram = true;
@@ -295,12 +319,14 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private string TelegramProblemText(TelegramLookup lookup) => lookup.Status switch
     {
-        TelegramLookupStatus.TokenRejected => "Telegram не принял этот токен. Скопируй его из сообщения @BotFather заново и целиком.",
-        TelegramLookupStatus.Conflict => "Сообщения этого бота уже забирает другая программа или сервис. Создай для уведомлений отдельного бота.",
-        TelegramLookupStatus.NoMessages => $"Токен подходит, но новых сообщений нет. Открой {(lookup.BotName is { } name ? $"@{name}" : "своего бота")}, напиши любое сообщение и сразу нажми ещё раз: Telegram хранит их только сутки.",
-        _ when _telegram.IsUsingRelay => "Посредник не ответил как надо. Проверь адрес: если открыть его в браузере, должно быть написано «Посредник работает». Без посредника Telegram может работать через VPN.",
-        _ => "Приложение не смогло связаться с Telegram (api.telegram.org). Интернет может работать, а этот адрес бывает закрыт у провайдера. Включи VPN для всего компьютера и нажми ещё раз или укажи адрес посредника ниже.",
+        TelegramLookupStatus.TokenRejected => L.T("Telegram не принял этот токен. Скопируй его из сообщения @BotFather заново и целиком."),
+        TelegramLookupStatus.Conflict => L.T("Сообщения этого бота уже забирает другая программа или сервис. Создай для уведомлений отдельного бота."),
+        TelegramLookupStatus.NoMessages => L.F("Токен подходит, но новых сообщений нет. Открой {0}, напиши любое сообщение и сразу нажми ещё раз: Telegram хранит их только сутки.", BotLabel(lookup)),
+        _ when _telegram.IsUsingRelay => L.T("Посредник не ответил как надо. Проверь адрес: если открыть его в браузере, должно быть написано «Посредник работает». Без посредника Telegram может работать через VPN."),
+        _ => L.T("Приложение не смогло связаться с Telegram (api.telegram.org). Интернет может работать, а этот адрес бывает закрыт у провайдера. Включи VPN для всего компьютера и нажми ещё раз или укажи адрес посредника ниже."),
     };
+
+    private static string BotLabel(TelegramLookup lookup) => lookup.BotName is { } name ? "@" + name : L.T("своего бота");
 
     private void ShowTelegramResult(string text)
     {
@@ -320,33 +346,33 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         if (isRecording)
         {
-            return $"Нажимай и кликай в окне Roblox, до минуты. Закончишь: нажми {snapshot.HotkeyLabel} или кнопку выше. Ввод в других окнах не записывается.";
+            return L.F("Нажимай и кликай в окне Roblox, до минуты. Закончишь: нажми {0} или кнопку выше. Ввод в других окнах не записывается.", snapshot.HotkeyLabel);
         }
 
         return snapshot.Settings.Macro is { } macro
-            ? $"Записано шагов: {macro.Steps.Count}, длительность {Texts.Duration(macro.Duration)}. Проверить можно кнопкой «Сделать сейчас»."
-            : "Запись длится до минуты. Записываются только клавиши и клики в окне Roblox.";
+            ? L.F("Записано шагов: {0}, длительность {1}. Проверить можно кнопкой «Сделать сейчас».", macro.Steps.Count, Texts.Duration(macro.Duration))
+            : L.T("Запись длится до минуты. Записываются только клавиши и клики в окне Roblox.");
     }
 
     private static string ReconnectHintText(AppSettings settings, bool linkIsValid)
     {
         if (settings.GameLink.Length > 0 && !linkIsValid)
         {
-            return "Нужна ссылка вида roblox.com/games/123456/... или номер игры. Короткие ссылки roblox.com/share не подойдут.";
+            return L.T("Нужна ссылка вида roblox.com/games/123456/... или номер игры. Короткие ссылки roblox.com/share не подойдут.");
         }
 
-        return "Зайду сама, если в журнале Roblox появится запись об отключении: максимум 5 попыток подряд. Если закрыть окно самой, обратно не зайду. Подходит для одного окна Roblox.";
+        return L.T("Зайду сама, если в журнале Roblox появится запись об отключении: максимум 5 попыток подряд. Если закрыть окно самой, обратно не зайду. Подходит для одного окна Roblox.");
     }
 
     private static string TargetHintText(AppSettings settings, bool isPicking)
     {
         if (isPicking)
         {
-            return "Кликни один раз в окне Roblox, этот клик в игру не попадёт. Через 30 секунд выбор отменится сам.";
+            return L.T("Кликни один раз в окне Roblox, этот клик в игру не попадёт. Через 30 секунд выбор отменится сам.");
         }
 
         return settings.ClickPoint is { } point
-            ? $"Точка: {point.X * 100:0}% слева и {point.Y * 100:0}% сверху окна Roblox. Если изменить размер окна, точка сдвинется вместе с ним, а кнопка в игре может оказаться в другом месте."
-            : "Нажми «Своя точка» и кликни один раз в окне Roblox. Приложение запомнит это место.";
+            ? L.F("Точка: {0:0}% слева и {1:0}% сверху окна Roblox. Если изменить размер окна, точка сдвинется вместе с ним, а кнопка в игре может оказаться в другом месте.", point.X * 100, point.Y * 100)
+            : L.T("Нажми «Своя точка» и кликни один раз в окне Roblox. Приложение запомнит это место.");
     }
 }

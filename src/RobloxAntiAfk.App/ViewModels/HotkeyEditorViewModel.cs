@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using RobloxAntiAfk.Core.Services;
 
 namespace RobloxAntiAfk.App.ViewModels;
@@ -11,7 +12,7 @@ public sealed partial class HotkeyEditorViewModel(
     Func<AppSettings, Hotkey?> read,
     Func<AppSettings, Hotkey?, AppSettings> write) : ObservableObject
 {
-    private const string IdleButtonText = "Поставить своё";
+    private static string IdleButtonText => L.T("Поставить своё");
 
     private string? _problem;
 
@@ -26,7 +27,7 @@ public sealed partial class HotkeyEditorViewModel(
         var custom = read(engine.Snapshot.Settings);
         CanReset = custom is not null;
         Message = _problem ?? (custom is { HasModifiers: false }
-            ? $"Пока приложение открыто, клавиша {custom.ToLabel(OperatingSystem.IsMacOS())} не будет работать в игре и других программах."
+            ? L.F("Пока приложение открыто, клавиша {0} не будет работать в игре и других программах.", custom.ToLabel(OperatingSystem.IsMacOS()))
             : "");
         HasMessage = Message.Length > 0;
     }
@@ -42,7 +43,7 @@ public sealed partial class HotkeyEditorViewModel(
 
         _problem = null;
         IsListening = true;
-        ButtonText = "Нажми клавишу или сочетание... Esc: отмена";
+        ButtonText = L.T("Нажми клавишу или сочетание... Esc: отмена");
         // Иначе текущее сочетание сработает само вместо того, чтобы записаться.
         engine.PauseHotkeys(true);
         Refresh();
@@ -72,7 +73,7 @@ public sealed partial class HotkeyEditorViewModel(
         var label = hotkey.ToLabel(OperatingSystem.IsMacOS());
         if (label == otherHotkeyLabel())
         {
-            _problem = $"{label} уже стоит на другое действие. Выбери другое сочетание.";
+            _problem = L.F("{0} уже стоит на другое действие. Выбери другое сочетание.", label);
             StopListening();
             return;
         }

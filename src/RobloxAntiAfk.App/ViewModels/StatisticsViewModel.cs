@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RobloxAntiAfk.App.Presentation;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using RobloxAntiAfk.Core.Services;
 
 namespace RobloxAntiAfk.App.ViewModels;
@@ -11,6 +12,7 @@ public sealed record SessionItem(string Start, string Duration, string Actions);
 public sealed partial class StatisticsViewModel(AntiAfkEngine engine) : ObservableObject
 {
     private IReadOnlyList<SessionRecord>? _shownSessions;
+    private AppLanguage _shownLanguage = L.Current;
 
     [ObservableProperty] private IReadOnlyList<SessionItem> _sessions = [];
     [ObservableProperty] private bool _hasSessions;
@@ -31,9 +33,10 @@ public sealed partial class StatisticsViewModel(AntiAfkEngine engine) : Observab
 
         OngoingSession = snapshot.OngoingSession is { } ongoing ? ToItem(ongoing) : null;
         HasOngoingSession = OngoingSession is not null;
-        if (!ReferenceEquals(snapshot.Statistics.Sessions, _shownSessions))
+        if (!ReferenceEquals(snapshot.Statistics.Sessions, _shownSessions) || _shownLanguage != L.Current)
         {
             _shownSessions = snapshot.Statistics.Sessions;
+            _shownLanguage = L.Current;
             Sessions = _shownSessions.Select(ToItem).ToArray();
             HasSessions = Sessions.Count > 0;
         }

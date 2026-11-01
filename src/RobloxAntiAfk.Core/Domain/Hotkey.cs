@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using RobloxAntiAfk.Core.Localization;
 
 namespace RobloxAntiAfk.Core.Domain;
 
@@ -43,11 +44,11 @@ public sealed record Hotkey(string Key, bool Control = false, bool Shift = false
     private static string KeyLabel(string key) => key switch
     {
         EscapeKey => "Esc",
-        "Space" => "Пробел",
-        "ArrowUp" => "Стрелка вверх",
-        "ArrowDown" => "Стрелка вниз",
-        "ArrowLeft" => "Стрелка влево",
-        "ArrowRight" => "Стрелка вправо",
+        "Space" => L.T("Пробел"),
+        "ArrowUp" => L.T("Стрелка вверх"),
+        "ArrowDown" => L.T("Стрелка вниз"),
+        "ArrowLeft" => L.T("Стрелка влево"),
+        "ArrowRight" => L.T("Стрелка вправо"),
         "Backquote" => "`",
         "Backslash" => "\\",
         "BracketLeft" => "[",

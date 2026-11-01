@@ -1,12 +1,13 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:RobloxAntiAfk.App.Presentation"
              xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
              x:Class="RobloxAntiAfk.App.Views.HotkeyEditor"
              x:DataType="vm:HotkeyEditorViewModel">
   <StackPanel Spacing="6" Margin="0,8,0,0">
     <WrapPanel>
       <Button x:Name="ChangeButton" Margin="0,0,8,0" Content="{Binding ButtonText}" Command="{Binding StartListeningCommand}" />
-      <Button Content="Вернуть стандартное" Command="{Binding ResetCommand}" IsVisible="{Binding CanReset}" />
+      <Button Content="{l:T 'Вернуть стандартное'}" Command="{Binding ResetCommand}" IsVisible="{Binding CanReset}" />
     </WrapPanel>
     <TextBlock Classes="muted small" Text="{Binding Message}" IsVisible="{Binding HasMessage}" />
   </StackPanel>

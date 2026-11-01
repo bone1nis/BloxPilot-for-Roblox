@@ -1,10 +1,11 @@
-using Avalonia;
 using Avalonia.Controls;
 
 namespace RobloxAntiAfk.App.Views;
 
 public sealed partial class MainWindow : Window
 {
+    private bool _isSeamless;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -12,13 +13,26 @@ public sealed partial class MainWindow : Window
         {
             UseSeamlessTitleBar();
         }
+
+        RebuildContent();
     }
 
-    /// <summary>На Mac содержимое заходит под прозрачный заголовок, поэтому нужно место под кнопки окна.</summary>
     public void UseSeamlessTitleBar()
     {
         ExtendClientAreaToDecorationsHint = true;
-        ContentArea.Margin = new Thickness(28, 44, 0, 0);
-        StatusArea.UseTitleBarInset();
+        _isSeamless = true;
+        (Content as MainView)?.UseSeamlessTitleBar();
+    }
+
+    /// <summary>Подписи в разметке читаются один раз, поэтому при смене языка экран создаётся заново.</summary>
+    public void RebuildContent()
+    {
+        var view = new MainView();
+        if (_isSeamless)
+        {
+            view.UseSeamlessTitleBar();
+        }
+
+        Content = view;
     }
 }

@@ -43,6 +43,8 @@ public sealed record AppSettings
     /// <summary>null значит стандартное сочетание этой системы.</summary>
     public Hotkey? ToggleHotkey { get; init; }
     public Hotkey? TranslationHotkey { get; init; }
+    public AppLanguage Language { get; init; }
+    public AppTheme Theme { get; init; }
 
     [JsonIgnore]
     public TimeSpan Interval => TimeSpan.FromMinutes(IntervalMinutes);
@@ -73,5 +75,7 @@ public sealed record AppSettings
         TelegramRelayUrl = TelegramRelayUrl,
         TranslationArea = TranslationArea,
         DeepLKey = DeepLKey,
+        Language = Language,
+        Theme = Theme,
     };
 }

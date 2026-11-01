@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RobloxAntiAfk.App.Presentation;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using RobloxAntiAfk.Core.Services;
 
 namespace RobloxAntiAfk.App.ViewModels;
@@ -63,18 +64,18 @@ public sealed partial class TranslationViewModel : ObservableObject
         Detail = snapshot.Detail;
         HasDetail = snapshot.Detail.Length > 0;
         HotkeyHint = !snapshot.IsHotkeyActive && settings.TranslationEnabled
-            ? $"Сочетание {snapshot.HotkeyLabel} занять не удалось: его держит другая программа или система. Поставь другое или запускай перевод кнопкой выше."
+            ? L.F("Сочетание {0} занять не удалось: его держит другая программа или система. Поставь другое или запускай перевод кнопкой выше.", snapshot.HotkeyLabel)
             : settings.TranslationSelectEachTime
-                ? $"{snapshot.HotkeyLabel} из любого окна: первое нажатие предложит обвести текст и покажет перевод, следующее его спрячет. Спрятать можно и кликом в окне Roblox."
-                : $"{snapshot.HotkeyLabel} показывает и прячет перевод из любого окна. Спрятать можно и кликом в окне Roblox. Первое нажатие предложит выбрать область.";
+                ? L.F("{0} из любого окна: первое нажатие предложит обвести текст и покажет перевод, следующее его спрячет. Спрятать можно и кликом в окне Roblox.", snapshot.HotkeyLabel)
+                : L.F("{0} показывает и прячет перевод из любого окна. Спрятать можно и кликом в окне Roblox. Первое нажатие предложит выбрать область.", snapshot.HotkeyLabel);
         HotkeyEditor.Refresh();
 
         ShowAreaButton = snapshot.IsSelecting || !settings.TranslationSelectEachTime;
-        AreaButtonText = snapshot.IsSelecting ? "Отменить выбор" : settings.TranslationArea is null ? "Выбрать область" : "Выбрать другую область";
+        AreaButtonText = snapshot.IsSelecting ? L.T("Отменить выбор") : settings.TranslationArea is null ? L.T("Выбрать область") : L.T("Выбрать другую область");
         AreaHint = AreaHintText(settings, snapshot.IsSelecting);
         TranslateButtonText = snapshot.IsOverlayActive
-            ? "Спрятать перевод"
-            : settings.TranslationSelectEachTime ? "Выделить и перевести" : "Перевести сейчас";
+            ? L.T("Спрятать перевод")
+            : settings.TranslationSelectEachTime ? L.T("Выделить и перевести") : L.T("Перевести сейчас");
         CanTranslate = settings.TranslationEnabled && !snapshot.IsSelecting
             && (settings.TranslationArea is not null || settings.TranslationSelectEachTime);
         ShowPermission = settings.TranslationEnabled && !snapshot.IsScreenPermissionGranted;
@@ -126,17 +127,17 @@ public sealed partial class TranslationViewModel : ObservableObject
     {
         if (isSelecting)
         {
-            return "Зажми левую кнопку мыши в окне Roblox и обведи текст. Этот клик в игру не попадёт. Отмена: Esc или правая кнопка мыши. Через 30 секунд выбор отменится сам.";
+            return L.T("Зажми левую кнопку мыши в окне Roblox и обведи текст. Этот клик в игру не попадёт. Отмена: Esc или правая кнопка мыши. Через 30 секунд выбор отменится сам.");
         }
 
         if (settings.TranslationSelectEachTime)
         {
-            return "Каждый раз обводишь нужный текст заново: сочетание, выделение, перевод. Клик левой или правой кнопкой в окне Roblox или сочетание прячет перевод.";
+            return L.T("Каждый раз обводишь нужный текст заново: сочетание, выделение, перевод. Клик левой или правой кнопкой в окне Roblox или сочетание прячет перевод.");
         }
 
         return settings.TranslationArea is null
-            ? "Обведи место, где в игре появляется текст: окно диалога, задание или подсказку."
-            : "Область запомнена и двигается вместе с окном Roblox.";
+            ? L.T("Обведи место, где в игре появляется текст: окно диалога, задание или подсказку.")
+            : L.T("Область запомнена и двигается вместе с окном Roblox.");
     }
 
     private void Change(Func<AppSettings, AppSettings> change)

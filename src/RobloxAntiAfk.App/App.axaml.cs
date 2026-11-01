@@ -1,14 +1,16 @@
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia;
 using RobloxAntiAfk.App.Presentation;
 using RobloxAntiAfk.App.ViewModels;
 using RobloxAntiAfk.App.Views;
 using RobloxAntiAfk.Core.Abstractions;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using RobloxAntiAfk.Core.Services;
 using RobloxAntiAfk.Core.Storage;
 
@@ -42,7 +44,22 @@ public sealed class App : Application
             var engine = CreateEngine(platform, clock);
             var telegram = new TelegramNotifier(TelegramNotifier.CreateHttpClient(TelegramTimeout));
             telegram.UseRelay(engine.Snapshot.Settings.TelegramRelayUrl);
-            engine.Changed += () => telegram.UseRelay(engine.Snapshot.Settings.TelegramRelayUrl);
+            L.Current = engine.Snapshot.Settings.Language;
+            ApplyTheme(engine.Snapshot.Settings.Theme);
+            Action? rebuildWindow = null;
+
+            // Подписка идёт раньше экранов: они должны обновиться уже на новом языке.
+            engine.Changed += () =>
+            {
+                var current = engine.Snapshot.Settings;
+                telegram.UseRelay(current.TelegramRelayUrl);
+                ApplyTheme(current.Theme);
+                if (current.Language != L.Current)
+                {
+                    L.Current = current.Language;
+                    Dispatcher.UIThread.Post(() => rebuildWindow?.Invoke());
+                }
+            };
             var outbox = new TelegramOutbox(telegram, clock);
             var translator = new ScreenTranslator(
                 platform,
@@ -52,6 +69,7 @@ public sealed class App : Application
                 clock);
             engine.Changed += translator.SyncWithSettings;
             var window = new MainWindow { DataContext = new MainViewModel(engine, telegram, translator) };
+            rebuildWindow = window.RebuildContent;
 
             // Окном управляем сами: приложение может жить в трее и без него.
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -102,23 +120,27 @@ public sealed class App : Application
 
     private void SetUpTray(IClassicDesktopStyleApplicationLifetime desktop, MainWindow window, AntiAfkEngine engine)
     {
-        var open = new NativeMenuItem("Открыть окно");
+        var open = new NativeMenuItem(L.T("Открыть окно"));
         open.Click += (_, _) => ShowWindow(window);
 
-        var toggle = new NativeMenuItem("Запустить");
+        var toggle = new NativeMenuItem(L.T("Запустить"));
         toggle.Click += (_, _) => engine.ToggleRunning();
+        var quit = new NativeMenuItem(L.T("Выйти"));
         var isStopped = true;
+        var shownLanguage = L.Current;
         engine.Changed += () =>
         {
             var nowStopped = engine.Snapshot.State == EngineState.Stopped;
-            if (nowStopped != isStopped)
+            if (nowStopped != isStopped || shownLanguage != L.Current)
             {
                 isStopped = nowStopped;
-                toggle.Header = nowStopped ? "Запустить" : "Остановить";
+                shownLanguage = L.Current;
+                toggle.Header = nowStopped ? L.T("Запустить") : L.T("Остановить");
+                open.Header = L.T("Открыть окно");
+                quit.Header = L.T("Выйти");
             }
         };
 
-        var quit = new NativeMenuItem("Выйти");
         quit.Click += (_, _) => desktop.Shutdown();
 
         var tray = new TrayIcon
@@ -130,6 +152,13 @@ public sealed class App : Application
         tray.Clicked += (_, _) => ShowWindow(window);
         TrayIcon.SetIcons(this, new TrayIcons { tray });
     }
+
+    private void ApplyTheme(AppTheme theme) => RequestedThemeVariant = theme switch
+    {
+        AppTheme.Light => ThemeVariant.Light,
+        AppTheme.System => ThemeVariant.Default,
+        _ => ThemeVariant.Dark,
+    };
 
     private static void ShowWindow(MainWindow window)
     {

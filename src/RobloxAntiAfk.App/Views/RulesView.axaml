@@ -1,12 +1,13 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:RobloxAntiAfk.App.Presentation"
              xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
              xmlns:presentation="using:RobloxAntiAfk.App.Presentation"
              x:Class="RobloxAntiAfk.App.Views.RulesView"
              x:DataType="vm:RulesViewModel">
   <StackPanel Spacing="22">
     <TextBlock Classes="muted" TextWrapping="Wrap"
-               Text="Оставь приложение открытым, и Roblox будет считать, что ты за компьютером." />
+               Text="{l:T 'Оставь приложение открытым, и Roblox будет считать, что ты за компьютером.'}" />
     <ItemsControl ItemsSource="{Binding Sections}">
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>

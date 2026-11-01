@@ -1,11 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:RobloxAntiAfk.App.Presentation"
              xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
              x:Class="RobloxAntiAfk.App.Views.StatusPanel"
              x:DataType="vm:StatusViewModel">
   <Border x:Name="Root"
-          Background="{StaticResource PanelBrush}"
-          BorderBrush="{StaticResource LineBrush}"
+          Background="{DynamicResource PanelBrush}"
+          BorderBrush="{DynamicResource LineBrush}"
           BorderThickness="0,0,1,0"
           Padding="24"
           Classes.stopped="{Binding IsStopped}"
@@ -13,14 +14,14 @@
           Classes.problem="{Binding IsProblem}">
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="16">
       <Panel Grid.Row="0" Width="196" Height="196" HorizontalAlignment="Center">
-        <Ellipse Stroke="{StaticResource RaisedBrush}" StrokeThickness="10" />
+        <Ellipse Stroke="{DynamicResource RaisedBrush}" StrokeThickness="10" />
         <Arc Classes="ring" SweepAngle="{Binding RingSweep}" />
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
           <TextBlock Text="{Binding TimeText}" HorizontalAlignment="Center" FontWeight="SemiBold"
                      FontSize="46" IsVisible="{Binding ShowCountdown}" />
           <TextBlock Text="{Binding TimeText}" HorizontalAlignment="Center" FontWeight="SemiBold"
                      FontSize="22" IsVisible="{Binding !ShowCountdown}" />
-          <TextBlock Text="до следующего действия" Classes="muted" FontSize="12" HorizontalAlignment="Center"
+          <TextBlock Text="{l:T 'до следующего действия'}" Classes="muted" FontSize="12" HorizontalAlignment="Center"
                      IsVisible="{Binding ShowCountdown}" />
         </StackPanel>
       </Panel>
@@ -33,7 +34,7 @@
 
       <Grid Grid.Row="2" ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
         <Button Grid.ColumnSpan="3" Classes="primary" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                Content="Открыть настройки доступа"
+                Content="{l:T 'Открыть настройки доступа'}"
                 IsVisible="{Binding NeedsPermission}"
                 Command="{Binding OpenPermissionSettingsCommand}" />
         <Button Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch"
@@ -41,7 +42,7 @@
                 Content="{Binding RunButtonText}" IsEnabled="{Binding CanToggleRunning}"
                 Command="{Binding ToggleRunningCommand}" />
         <Button Grid.Row="1" Grid.Column="2" HorizontalAlignment="Stretch"
-                Content="Сделать сейчас" IsEnabled="{Binding CanRunNow}"
+                Content="{l:T 'Сделать сейчас'}" IsEnabled="{Binding CanRunNow}"
                 Command="{Binding RunNowCommand}" />
       </Grid>
 
@@ -49,20 +50,20 @@
         <Border Grid.Column="0" Classes="stat">
           <StackPanel>
             <TextBlock Text="{Binding ActionsDone}" FontSize="17" FontWeight="SemiBold" />
-            <TextBlock Text="действий сделано" Classes="muted" FontSize="12" />
+            <TextBlock Text="{l:T 'действий сделано'}" Classes="muted" FontSize="12" />
           </StackPanel>
         </Border>
         <Border Grid.Column="2" Classes="stat">
           <StackPanel>
             <TextBlock Text="{Binding ActiveTime}" FontSize="17" FontWeight="SemiBold" />
-            <TextBlock Text="время работы" Classes="muted" FontSize="12" />
+            <TextBlock Text="{l:T 'время работы'}" Classes="muted" FontSize="12" />
           </StackPanel>
         </Border>
       </Grid>
 
       <Grid Grid.Row="4" RowDefinitions="Auto,*" RowSpacing="4">
-        <TextBlock Classes="muted" FontSize="12" FontWeight="SemiBold" Text="Последние действия" />
-        <TextBlock Grid.Row="1" Classes="muted" FontSize="12.5" Text="Пока ничего не было"
+        <TextBlock Classes="muted" FontSize="12" FontWeight="SemiBold" Text="{l:T 'Последние действия'}" />
+        <TextBlock Grid.Row="1" Classes="muted" FontSize="12.5" Text="{l:T 'Пока ничего не было'}"
                    IsVisible="{Binding !HasActivity}" />
         <ScrollViewer Grid.Row="1" IsVisible="{Binding HasActivity}">
           <ItemsControl ItemsSource="{Binding Activity}">

@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:RobloxAntiAfk.App.Presentation"
+             xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
+             xmlns:views="using:RobloxAntiAfk.App.Views"
+             x:Class="RobloxAntiAfk.App.Views.MainView"
+             x:DataType="vm:MainViewModel">
+  <Grid ColumnDefinitions="340,*">
+    <views:StatusPanel Grid.Column="0" DataContext="{Binding Status}" x:Name="StatusArea" />
+
+    <Grid Grid.Column="1" RowDefinitions="Auto,*" x:Name="ContentArea" Margin="28,24,0,0">
+      <Border Grid.Row="0" Classes="tabs" Margin="0,0,0,16">
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="tab" Classes.active="{Binding IsRulesTab}"
+                  Content="{l:T 'Как это работает'}"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Rules}" />
+          <Button Classes="tab" Classes.active="{Binding IsSettingsTab}"
+                  Content="{l:T 'Настройки'}"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Settings}" />
+          <Button Classes="tab" Classes.active="{Binding IsStatisticsTab}"
+                  Content="{l:T 'Статистика'}"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Statistics}" />
+          <Button Classes="tab" Classes.active="{Binding IsTranslationTab}"
+                  Content="{l:T 'Перевод'}"
+                  Command="{Binding SelectTabCommand}" CommandParameter="{x:Static vm:MainTab.Translation}" />
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer Grid.Row="1" x:Name="Scroller" Padding="0,0,28,24">
+        <Panel>
+          <Panel IsVisible="{Binding IsRulesTab}">
+            <views:RulesView DataContext="{Binding Rules}" />
+          </Panel>
+          <Panel IsVisible="{Binding IsSettingsTab}">
+            <views:SettingsView DataContext="{Binding Settings}" />
+          </Panel>
+          <Panel IsVisible="{Binding IsStatisticsTab}">
+            <views:StatisticsView DataContext="{Binding Statistics}" />
+          </Panel>
+          <Panel IsVisible="{Binding IsTranslationTab}">
+            <views:TranslationView DataContext="{Binding Translation}" />
+          </Panel>
+        </Panel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

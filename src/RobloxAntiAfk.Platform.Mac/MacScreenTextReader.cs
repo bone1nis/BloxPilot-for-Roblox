@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using RobloxAntiAfk.Core.Abstractions;
 using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using RobloxAntiAfk.Platform.Mac.Native;
 
 namespace RobloxAntiAfk.Platform.Mac;
@@ -66,7 +67,7 @@ internal sealed class MacScreenTextReader : IScreenTextReader
             });
             if (capture is null)
             {
-                return new SnapshotResult(TextReadStatus.Failed, null, "Не удалось запустить screencapture.");
+                return new SnapshotResult(TextReadStatus.Failed, null, L.T("Не удалось запустить screencapture."));
             }
 
             await capture.WaitForExitAsync(cancellation);
@@ -76,7 +77,7 @@ internal sealed class MacScreenTextReader : IScreenTextReader
             }
 
             File.Delete(path);
-            return new SnapshotResult(TextReadStatus.Failed, null, $"screencapture завершился с кодом {capture.ExitCode}.");
+            return new SnapshotResult(TextReadStatus.Failed, null, L.F("screencapture завершился с кодом {0}.", capture.ExitCode));
         }
         catch (Exception exception)
         {

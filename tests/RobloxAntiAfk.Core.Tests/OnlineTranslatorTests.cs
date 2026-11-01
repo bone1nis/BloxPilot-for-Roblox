@@ -36,6 +36,34 @@ public class OnlineTranslatorTests
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [Fact]
+    public async Task Translates_into_the_language_of_the_interface()
+    {
+        var handler = new FakeHandler(new Route("googleapis", HttpStatusCode.OK, GoogleAnswer));
+        var translator = new OnlineTranslator(new HttpClient(handler), () => RobloxAntiAfk.Core.Domain.AppLanguage.English);
+
+        await translator.TranslateAsync("Hola", "", Token);
+
+        Assert.Contains("tl=en", handler.Requests[0].RequestUri!.Query, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Same_text_is_translated_again_after_the_language_changes()
+    {
+        var language = RobloxAntiAfk.Core.Domain.AppLanguage.Russian;
+        var handler = new FakeHandler(new Route("googleapis", HttpStatusCode.OK, GoogleAnswer));
+        var translator = new OnlineTranslator(new HttpClient(handler), () => language);
+        await translator.TranslateAsync("Hola", "", Token);
+        var callsAfterFirst = handler.Requests.Count;
+
+        await translator.TranslateAsync("Hola", "", Token);
+        Assert.Equal(callsAfterFirst, handler.Requests.Count);
+
+        language = RobloxAntiAfk.Core.Domain.AppLanguage.English;
+        await translator.TranslateAsync("Hola", "", Token);
+        Assert.True(handler.Requests.Count > callsAfterFirst);
+    }
+
+    [Fact]
     public async Task Uses_google_and_joins_the_pieces()
     {
         var handler = new FakeHandler(new Route("googleapis", HttpStatusCode.OK, GoogleAnswer));

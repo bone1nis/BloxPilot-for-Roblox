@@ -1,3 +1,5 @@
+using RobloxAntiAfk.Core.Domain;
+using RobloxAntiAfk.Core.Localization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -8,10 +10,10 @@ namespace RobloxAntiAfk.Core.Services;
 /// Переводит на русский через интернет. В сервис уходит только распознанный текст, снимки экрана остаются на компьютере.
 /// Сначала DeepL, если указан ключ, затем бесплатные сервисы: если один не ответил, пробуем следующий.
 /// </summary>
-public sealed class OnlineTranslator(HttpClient http)
+public sealed class OnlineTranslator(HttpClient http, Func<AppLanguage>? targetLanguage = null)
 {
-    private const string GoogleUrl = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ru&dt=t";
-    private const string MyMemoryUrl = "https://api.mymemory.translated.net/get?langpair=en%7Cru&q=";
+    private const string GoogleUrl = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&dt=t&tl=";
+    private const string MyMemoryUrl = "https://api.mymemory.translated.net/get?q=";
     private const string DeepLPaidUrl = "https://api.deepl.com/v2/translate";
     private const string DeepLFreeUrl = "https://api-free.deepl.com/v2/translate";
     private const string DeepLFreeKeySuffix = ":fx";
@@ -19,13 +21,17 @@ public sealed class OnlineTranslator(HttpClient http)
     private const int MaxMyMemoryLength = 450;
     private const int MaxCacheSize = 200;
 
-    private readonly Dictionary<string, string> _cache = [];
+    private readonly Dictionary<(AppLanguage Target, string Text), string> _cache = [];
+
+    /// <summary>Перевод идёт на язык интерфейса.</summary>
+    private AppLanguage Target => targetLanguage?.Invoke() ?? L.Current;
 
     /// <summary>Возвращает перевод или null, если ни один сервис не ответил. Вызывается из потока интерфейса.</summary>
     public async Task<string?> TranslateAsync(string text, string deepLKey, CancellationToken cancellation)
     {
         var source = text.Length > MaxLength ? text[..MaxLength] : text;
-        if (_cache.TryGetValue(source, out var cached))
+        var target = Target;
+        if (_cache.TryGetValue((target, source), out var cached))
         {
             return cached;
         }
@@ -43,7 +49,7 @@ public sealed class OnlineTranslator(HttpClient http)
             _cache.Clear();
         }
 
-        _cache[source] = result;
+        _cache[(target, source)] = result;
         return result;
     }
 
@@ -56,7 +62,7 @@ public sealed class OnlineTranslator(HttpClient http)
 
         using var request = new HttpRequestMessage(HttpMethod.Post, key.EndsWith(DeepLFreeKeySuffix, StringComparison.Ordinal) ? DeepLFreeUrl : DeepLPaidUrl)
         {
-            Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["text"] = text, ["target_lang"] = "RU" }),
+            Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["text"] = text, ["target_lang"] = Target == AppLanguage.English ? "EN-US" : "RU" }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("DeepL-Auth-Key", key);
         return await SendAsync(request, ParseDeepL, cancellation);
@@ -64,7 +70,7 @@ public sealed class OnlineTranslator(HttpClient http)
 
     private async Task<string?> TryGoogleAsync(string text, CancellationToken cancellation)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, GoogleUrl)
+        using var request = new HttpRequestMessage(HttpMethod.Post, GoogleUrl + (Target == AppLanguage.English ? "en" : "ru"))
         {
             Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["q"] = text }),
         };
@@ -78,7 +84,7 @@ public sealed class OnlineTranslator(HttpClient http)
             return null;
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, MyMemoryUrl + Uri.EscapeDataString(text));
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{MyMemoryUrl}{Uri.EscapeDataString(text)}&langpair={(Target == AppLanguage.English ? "Autodetect%7Cen" : "en%7Cru")}");
         return await SendAsync(request, ParseMyMemory, cancellation);
     }
 

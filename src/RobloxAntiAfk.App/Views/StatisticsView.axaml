@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:RobloxAntiAfk.App.Presentation"
              xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
              x:Class="RobloxAntiAfk.App.Views.StatisticsView"
              x:DataType="vm:StatisticsViewModel">
@@ -8,40 +9,40 @@
       <Border Classes="card">
         <StackPanel>
           <TextBlock Classes="bigNumber" Text="{Binding CurrentSession}" />
-          <TextBlock Classes="muted small" Text="текущая сессия" />
+          <TextBlock Classes="muted small" Text="{l:T 'текущая сессия'}" />
         </StackPanel>
       </Border>
       <Border Grid.Column="2" Classes="card">
         <StackPanel>
           <TextBlock Classes="bigNumber" Text="{Binding LongestSession}" />
-          <TextBlock Classes="muted small" Text="самая долгая сессия" />
+          <TextBlock Classes="muted small" Text="{l:T 'самая долгая сессия'}" />
         </StackPanel>
       </Border>
       <Border Grid.Row="2" Classes="card">
         <StackPanel>
           <TextBlock Classes="bigNumber" Text="{Binding TotalTime}" />
-          <TextBlock Classes="muted small" Text="всего работало" />
+          <TextBlock Classes="muted small" Text="{l:T 'всего работало'}" />
         </StackPanel>
       </Border>
       <Border Grid.Row="2" Grid.Column="2" Classes="card">
         <StackPanel>
           <TextBlock Classes="bigNumber" Text="{Binding TotalActions}" />
-          <TextBlock Classes="muted small" Text="всего действий" />
+          <TextBlock Classes="muted small" Text="{l:T 'всего действий'}" />
         </StackPanel>
       </Border>
     </Grid>
     <TextBlock Classes="muted small"
-               Text="Считается время, пока Roblox запущен и приложение включено. После остановки или закрытия Roblox начинается новая сессия. Статистика сохраняется между запусками." />
+               Text="{l:T 'Считается время, пока Roblox запущен и приложение включено. После остановки или закрытия Roblox начинается новая сессия. Статистика сохраняется между запусками.'}" />
 
     <StackPanel Margin="0,10,0,0">
-      <TextBlock Classes="sectionTitle" Text="Сессии" />
-      <TextBlock Classes="muted small" Text="Пока нет сессий. Нажми «Запустить», и здесь появится первая."
+      <TextBlock Classes="sectionTitle" Text="{l:T 'Сессии'}" />
+      <TextBlock Classes="muted small" Text="{l:T 'Пока нет сессий. Нажми «Запустить», и здесь появится первая.'}"
                  IsVisible="{Binding IsListEmpty}" />
       <StackPanel Spacing="6">
         <Border Classes="card session running" IsVisible="{Binding HasOngoingSession}">
           <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14">
             <StackPanel>
-              <TextBlock Classes="strong" Foreground="{StaticResource AccentBrush}" Text="Идёт сейчас" />
+              <TextBlock Classes="strong" Foreground="{DynamicResource AccentBrush}" Text="{l:T 'Идёт сейчас'}" />
               <TextBlock Classes="muted small" Text="{Binding OngoingSession.Start, FallbackValue=''}" />
             </StackPanel>
             <TextBlock Grid.Column="1" Classes="muted small" VerticalAlignment="Center" Text="{Binding OngoingSession.Actions, FallbackValue=''}" />
@@ -68,9 +69,9 @@
         </ItemsControl>
       </StackPanel>
       <TextBlock Classes="muted small" Margin="0,8,0,0" IsVisible="{Binding HasSessions}"
-                 Text="Хранятся последние 50 сессий. Сессии короче 10 секунд не записываются." />
+                 Text="{l:T 'Хранятся последние 50 сессий. Сессии короче 10 секунд не записываются.'}" />
     </StackPanel>
 
-    <Button HorizontalAlignment="Left" Content="Сбросить статистику" Command="{Binding ResetCommand}" />
+    <Button HorizontalAlignment="Left" Content="{l:T 'Сбросить статистику'}" Command="{Binding ResetCommand}" />
   </StackPanel>
 </UserControl>
