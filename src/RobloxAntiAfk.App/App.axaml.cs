@@ -41,6 +41,8 @@ public sealed class App : Application
             var clock = new SystemClock();
             var engine = CreateEngine(platform, clock);
             var telegram = new TelegramNotifier(TelegramNotifier.CreateHttpClient(TelegramTimeout));
+            telegram.UseRelay(engine.Snapshot.Settings.TelegramRelayUrl);
+            engine.Changed += () => telegram.UseRelay(engine.Snapshot.Settings.TelegramRelayUrl);
             var outbox = new TelegramOutbox(telegram, clock);
             var translator = new ScreenTranslator(
                 platform,

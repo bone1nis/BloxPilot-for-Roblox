@@ -27,9 +27,24 @@ public sealed record TelegramLookup(TelegramLookupStatus Status, string? ChatId 
 /// <summary>Пишет в Telegram через бота пользователя. Адрес с токеном никуда не выводится, поэтому ошибки только считаются неудачей.</summary>
 public sealed partial class TelegramNotifier(HttpClient http)
 {
-    private const string ApiRoot = "https://api.telegram.org/bot";
+    private const string DirectApiRoot = "https://api.telegram.org/bot";
     private static readonly TimeSpan ConnectAttemptTimeout = TimeSpan.FromSeconds(5);
     private static readonly string[] UpdatesWithChat = ["message", "edited_message", "my_chat_member"];
+
+    private string _apiRoot = DirectApiRoot;
+
+    public bool IsUsingRelay => _apiRoot != DirectApiRoot;
+
+    /// <summary>В адресе запроса есть токен бота, поэтому посредник подходит только по https.</summary>
+    public static bool IsValidRelayUrl(string? url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri)
+        && uri.Scheme == Uri.UriSchemeHttps
+        && uri.Query.Length == 0
+        && uri.Fragment.Length == 0;
+
+    /// <summary>Посредник нужен, если api.telegram.org закрыт у провайдера. Без подходящего адреса запросы идут напрямую.</summary>
+    public void UseRelay(string? relayUrl) =>
+        _apiRoot = IsValidRelayUrl(relayUrl) ? $"{relayUrl!.TrimEnd('/')}/bot" : DirectApiRoot;
 
     /// <summary>
     /// .NET пробует адреса сервера по очереди. Если IPv6 в сети молча не работает, до IPv4 он доходит слишком поздно,
@@ -78,7 +93,7 @@ public sealed partial class TelegramNotifier(HttpClient http)
 
         try
         {
-            using var response = await http.PostAsJsonAsync($"{ApiRoot}{token}/sendMessage", new SendMessageRequest(chatId, text));
+            using var response = await http.PostAsJsonAsync($"{_apiRoot}{token}/sendMessage", new SendMessageRequest(chatId, text));
             return response.IsSuccessStatusCode;
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
@@ -97,7 +112,7 @@ public sealed partial class TelegramNotifier(HttpClient http)
 
         try
         {
-            using var response = await http.GetAsync($"{ApiRoot}{token}/getUpdates");
+            using var response = await http.GetAsync($"{_apiRoot}{token}/getUpdates");
             if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.NotFound)
             {
                 return new TelegramLookup(TelegramLookupStatus.TokenRejected);
@@ -146,7 +161,7 @@ public sealed partial class TelegramNotifier(HttpClient http)
     /// <summary>Имя бота нужно, чтобы пользователь сверил, тому ли боту написал.</summary>
     private async Task<string?> FindBotNameAsync(string token)
     {
-        using var response = await http.GetAsync($"{ApiRoot}{token}/getMe");
+        using var response = await http.GetAsync($"{_apiRoot}{token}/getMe");
         if (!response.IsSuccessStatusCode)
         {
             return null;

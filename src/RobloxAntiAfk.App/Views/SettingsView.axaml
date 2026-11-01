@@ -139,6 +139,8 @@
           <Button Grid.Column="1" Content="Подключить" IsEnabled="{Binding CanConnectTelegram}" Command="{Binding ConnectTelegramCommand}" />
         </Grid>
         <TextBlock Classes="muted small" Text="{Binding TelegramHint}" />
+        <TextBox PlaceholderText="Адрес посредника, если Telegram работает только с VPN" Text="{Binding TelegramRelayUrl}" />
+        <TextBlock Classes="muted small" Classes.warning="{Binding IsTelegramRelayBad}" Text="{Binding TelegramRelayHint}" />
       </StackPanel>
     </Border>
 

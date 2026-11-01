@@ -36,6 +36,58 @@ public class TelegramNotifierTests
         Assert.Contains("\"text\":", handler.LastBody);
     }
 
+    [Theory]
+    [InlineData("https://relay.example.workers.dev", true)]
+    [InlineData("https://relay.example.workers.dev/", true)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    [InlineData("relay.example.workers.dev", false)]
+    [InlineData("http://relay.example.workers.dev", false)]
+    [InlineData("https://relay.example.workers.dev?a=1", false)]
+    public void Relay_must_be_a_full_https_address(string? url, bool expected) =>
+        Assert.Equal(expected, TelegramNotifier.IsValidRelayUrl(url));
+
+    [Theory]
+    [InlineData("https://relay.example.workers.dev")]
+    [InlineData("https://relay.example.workers.dev/")]
+    public async Task Relay_receives_the_same_requests_as_telegram(string relay)
+    {
+        var (notifier, handler) = Create(body: """{"ok":true,"result":[{"message":{"chat":{"id":42}}}]}""");
+
+        notifier.UseRelay(relay);
+        Assert.True(notifier.IsUsingRelay);
+
+        Assert.True(await notifier.SendAsync(Token, "42", "привет"));
+        Assert.Equal($"https://relay.example.workers.dev/bot{Token}/sendMessage", handler.LastUri);
+
+        Assert.Equal("42", (await notifier.FindChatAsync(Token)).ChatId);
+        Assert.Equal($"https://relay.example.workers.dev/bot{Token}/getUpdates", handler.LastUri);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("http://relay.example.workers.dev")]
+    public async Task Without_a_usable_relay_messages_go_straight_to_telegram(string relay)
+    {
+        var (notifier, handler) = Create();
+        notifier.UseRelay("https://relay.example.workers.dev");
+
+        notifier.UseRelay(relay);
+
+        Assert.False(notifier.IsUsingRelay);
+        Assert.True(await notifier.SendAsync(Token, "42", "привет"));
+        Assert.Equal($"https://api.telegram.org/bot{Token}/sendMessage", handler.LastUri);
+    }
+
+    [Fact]
+    public void Relay_address_survives_settings_reset_and_is_trimmed()
+    {
+        var settings = new RobloxAntiAfk.Core.Domain.AppSettings { TelegramRelayUrl = " https://relay.example.workers.dev " }.Normalized();
+
+        Assert.Equal("https://relay.example.workers.dev", settings.TelegramRelayUrl);
+        Assert.Equal(settings.TelegramRelayUrl, settings.ToDefaultsKeepingUserData().TelegramRelayUrl);
+    }
+
     [Fact]
     public async Task Bad_token_makes_no_request()
     {

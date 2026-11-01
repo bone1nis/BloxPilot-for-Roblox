@@ -31,6 +31,7 @@ public sealed record AppSettings
     public string GameLink { get; init; } = "";
     public string TelegramToken { get; init; } = "";
     public string TelegramChatId { get; init; } = "";
+    public string TelegramRelayUrl { get; init; } = "";
     public bool TranslationEnabled { get; init; }
     public WindowArea? TranslationArea { get; init; }
     public bool TranslationAutoRefresh { get; init; }
@@ -57,6 +58,7 @@ public sealed record AppSettings
         GameLink = GameLink ?? "",
         TelegramToken = (TelegramToken ?? "").Trim(),
         TelegramChatId = TelegramChatId ?? "",
+        TelegramRelayUrl = (TelegramRelayUrl ?? "").Trim(),
         TranslationArea = TranslationArea?.Clamped(),
         DeepLKey = (DeepLKey ?? "").Trim(),
     };
@@ -68,6 +70,7 @@ public sealed record AppSettings
         GameLink = GameLink,
         TelegramToken = TelegramToken,
         TelegramChatId = TelegramChatId,
+        TelegramRelayUrl = TelegramRelayUrl,
         TranslationArea = TranslationArea,
         DeepLKey = DeepLKey,
     };

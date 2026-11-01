@@ -56,6 +56,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _telegramToken = "";
     [ObservableProperty] private string _telegramHint = "";
     [ObservableProperty] private bool _canConnectTelegram = true;
+    [ObservableProperty] private string _telegramRelayUrl = "";
+    [ObservableProperty] private string _telegramRelayHint = "";
+    [ObservableProperty] private bool _isTelegramRelayBad;
 
     public HotkeyEditorViewModel HotkeyEditor { get; }
 
@@ -175,6 +178,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         TelegramHint = _telegramResult ?? (settings.TelegramChatId.Length > 0
             ? "Подключено. Об отключении бот напишет, пока приложение открыто, о закрытии окна пока оно запущено. Без интернета сообщение уйдёт, когда он появится."
             : "Создай бота через @BotFather, вставь его токен, напиши боту любое сообщение и нажми «Подключить». Токен хранится на этом компьютере в файле настроек.");
+        TelegramRelayUrl = settings.TelegramRelayUrl;
+        IsTelegramRelayBad = settings.TelegramRelayUrl.Length > 0 && !TelegramNotifier.IsValidRelayUrl(settings.TelegramRelayUrl);
+        TelegramRelayHint = settings.TelegramRelayUrl.Length == 0
+            ? "Необязательно. Посредник передаёт сообщения бота, когда Telegram закрыт без VPN. Как его создать, написано на вкладке «Как это работает»."
+            : IsTelegramRelayBad
+                ? "Нужен полный адрес вида https://имя.workers.dev. Пока сообщения идут напрямую."
+                : "Сообщения идут через этот адрес, и токен бота проходит через него, поэтому указывай только своего посредника. Нажми «Подключить», чтобы проверить.";
         _isApplying = false;
     }
 
@@ -266,6 +276,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
+    partial void OnTelegramRelayUrlChanged(string value)
+    {
+        if (!_isApplying)
+        {
+            _telegramResult = null;
+            Change(settings => settings with { TelegramRelayUrl = value });
+        }
+    }
+
     private void Change(Func<AppSettings, AppSettings> change)
     {
         if (!_isApplying)
@@ -274,12 +293,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    private static string TelegramProblemText(TelegramLookup lookup) => lookup.Status switch
+    private string TelegramProblemText(TelegramLookup lookup) => lookup.Status switch
     {
         TelegramLookupStatus.TokenRejected => "Telegram не принял этот токен. Скопируй его из сообщения @BotFather заново и целиком.",
         TelegramLookupStatus.Conflict => "Сообщения этого бота уже забирает другая программа или сервис. Создай для уведомлений отдельного бота.",
         TelegramLookupStatus.NoMessages => $"Токен подходит, но новых сообщений нет. Открой {(lookup.BotName is { } name ? $"@{name}" : "своего бота")}, напиши любое сообщение и сразу нажми ещё раз: Telegram хранит их только сутки.",
-        _ => "Приложение не смогло связаться с Telegram (api.telegram.org). Интернет может работать, а этот адрес бывает закрыт у провайдера. Если Telegram у тебя работает через VPN, включи VPN для всего компьютера и нажми ещё раз.",
+        _ when _telegram.IsUsingRelay => "Посредник не ответил как надо. Проверь адрес: если открыть его в браузере, должно быть написано «Посредник работает». Без посредника Telegram может работать через VPN.",
+        _ => "Приложение не смогло связаться с Telegram (api.telegram.org). Интернет может работать, а этот адрес бывает закрыт у провайдера. Включи VPN для всего компьютера и нажми ещё раз или укажи адрес посредника ниже.",
     };
 
     private void ShowTelegramResult(string text)
