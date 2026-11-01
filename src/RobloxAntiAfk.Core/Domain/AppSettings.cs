@@ -39,6 +39,10 @@ public sealed record AppSettings
     public bool TranslationSelectEachTime { get; init; } = true;
     public string DeepLKey { get; init; } = "";
 
+    /// <summary>null значит стандартное сочетание этой системы.</summary>
+    public Hotkey? ToggleHotkey { get; init; }
+    public Hotkey? TranslationHotkey { get; init; }
+
     [JsonIgnore]
     public TimeSpan Interval => TimeSpan.FromMinutes(IntervalMinutes);
 

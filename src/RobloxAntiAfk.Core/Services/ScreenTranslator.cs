@@ -44,6 +44,8 @@ public sealed class ScreenTranslator
     private string _detail = "";
     private bool _isHotkeyActive;
     private bool _isHotkeyRegistered;
+    private bool _wasEnabled;
+    private Hotkey? _boundHotkey;
 
     private bool _isSelecting;
     private bool _isDragging;
@@ -80,11 +82,15 @@ public sealed class ScreenTranslator
         _translate = translate;
         _clock = clock;
         _status = IdleStatus(Settings);
+        _boundHotkey = Settings.TranslationHotkey;
+        _platform.TranslationHotkey.Bind(_boundHotkey);
     }
 
     public event Action? Changed;
 
     private AppSettings Settings => _engine.Snapshot.Settings;
+
+    public string HotkeyLabel => _platform.TranslationHotkey.Label;
 
     public TranslationSnapshot Snapshot => new(
         _status,
@@ -101,19 +107,34 @@ public sealed class ScreenTranslator
     public void SyncWithSettings()
     {
         var settings = Settings;
-        if (settings.TranslationEnabled && !_isHotkeyRegistered)
-        {
-            _isHotkeyActive = _platform.TranslationHotkey.Start(HandleHotkey);
-            _isHotkeyRegistered = true;
-        }
-        else if (!settings.TranslationEnabled && _isHotkeyRegistered)
+        var shouldListen = settings.TranslationEnabled && !_engine.AreHotkeysPaused;
+        if (_isHotkeyRegistered && (!shouldListen || settings.TranslationHotkey != _boundHotkey))
         {
             _platform.TranslationHotkey.Stop();
             _isHotkeyRegistered = false;
+        }
+
+        // Подпись сочетания нужна и пока перевод выключен: её показывают правила.
+        if (!_isHotkeyRegistered)
+        {
+            _boundHotkey = settings.TranslationHotkey;
+            _platform.TranslationHotkey.Bind(_boundHotkey);
+        }
+
+        if (shouldListen && !_isHotkeyRegistered)
+        {
+            _isHotkeyActive = _platform.TranslationHotkey.Start(OnHotkeyPressed);
+            _isHotkeyRegistered = true;
+        }
+
+        if (_wasEnabled && !settings.TranslationEnabled)
+        {
             _isHotkeyActive = false;
             CancelSelection();
             Close();
         }
+
+        _wasEnabled = settings.TranslationEnabled;
 
         if (!_isSelecting && !_isActive && !_isBusy && IsIdleStatus(_status))
         {
@@ -174,6 +195,15 @@ public sealed class ScreenTranslator
     }
 
     /// <summary>Сочетание показывает и прячет подпись, поэтому к приложению возвращаться не нужно.</summary>
+    /// <summary>Одиночной клавишей может оказаться та, что приложение само нажимает в игре.</summary>
+    private void OnHotkeyPressed()
+    {
+        if (!_engine.IsActing || Settings.TranslationHotkey is not { HasModifiers: false })
+        {
+            HandleHotkey();
+        }
+    }
+
     public void HandleHotkey()
     {
         if (_isSelecting)

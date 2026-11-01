@@ -208,7 +208,10 @@ public sealed class FakeHotkey(string label = "Ctrl+Shift+F8") : IGlobalHotkey
 
     public bool CanStart { get; set; } = true;
     public bool IsStarted => _handler is not null;
-    public string Label => label;
+    public Hotkey? Bound { get; private set; }
+    public string Label => Bound?.ToLabel(isMac: false) ?? label;
+
+    public void Bind(Hotkey? custom) => Bound = custom;
 
     public bool Start(Action onPressed)
     {

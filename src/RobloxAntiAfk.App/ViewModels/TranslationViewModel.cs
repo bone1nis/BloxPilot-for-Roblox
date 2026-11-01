@@ -36,8 +36,15 @@ public sealed partial class TranslationViewModel : ObservableObject
     {
         _engine = engine;
         _translator = translator;
+        HotkeyEditor = new HotkeyEditorViewModel(
+            engine,
+            () => engine.Snapshot.HotkeyLabel,
+            settings => settings.TranslationHotkey,
+            (settings, hotkey) => settings with { TranslationHotkey = hotkey });
         translator.Changed += Refresh;
     }
+
+    public HotkeyEditorViewModel HotkeyEditor { get; }
 
     public void Refresh()
     {
@@ -56,10 +63,11 @@ public sealed partial class TranslationViewModel : ObservableObject
         Detail = snapshot.Detail;
         HasDetail = snapshot.Detail.Length > 0;
         HotkeyHint = !snapshot.IsHotkeyActive && settings.TranslationEnabled
-            ? $"Сочетание {snapshot.HotkeyLabel} занято другой программой. Перевод работает только кнопкой выше."
+            ? $"Сочетание {snapshot.HotkeyLabel} занять не удалось: его держит другая программа или система. Поставь другое или запускай перевод кнопкой выше."
             : settings.TranslationSelectEachTime
                 ? $"{snapshot.HotkeyLabel} из любого окна: первое нажатие предложит обвести текст и покажет перевод, следующее его спрячет. Спрятать можно и кликом в окне Roblox."
                 : $"{snapshot.HotkeyLabel} показывает и прячет перевод из любого окна. Спрятать можно и кликом в окне Roblox. Первое нажатие предложит выбрать область.";
+        HotkeyEditor.Refresh();
 
         ShowAreaButton = snapshot.IsSelecting || !settings.TranslationSelectEachTime;
         AreaButtonText = snapshot.IsSelecting ? "Отменить выбор" : settings.TranslationArea is null ? "Выбрать область" : "Выбрать другую область";

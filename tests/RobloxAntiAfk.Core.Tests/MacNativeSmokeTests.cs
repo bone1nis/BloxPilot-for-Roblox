@@ -77,6 +77,33 @@ public class MacNativeSmokeTests
         Assert.NotEqual(platform.Hotkey.Label, platform.TranslationHotkey.Label);
     }
 
+    /// <summary>Раньше работало только первое сочетание: система отклоняла повторную установку того же обработчика.</summary>
+    [Fact]
+    public void Several_hotkeys_register_at_once_and_can_be_rebound()
+    {
+        RequireMac();
+        var first = new MacHotkey(101, new Hotkey("F19", Control: true, Shift: true, Alt: true));
+        var second = new MacHotkey(102, new Hotkey("F18", Control: true, Shift: true, Alt: true));
+
+        try
+        {
+            Assert.True(first.Start(() => { }));
+            Assert.True(second.Start(() => { }));
+
+            second.Bind(new Hotkey("F17", Control: true, Shift: true, Alt: true));
+            Assert.True(second.Start(() => { }));
+            Assert.Equal("Control+Option+Shift+F17", second.Label);
+
+            second.Bind(new Hotkey("НетТакой"));
+            Assert.False(second.Start(() => { }));
+        }
+        finally
+        {
+            first.Stop();
+            second.Stop();
+        }
+    }
+
     [Fact]
     public void Reads_idle_time_and_permission_state()
     {

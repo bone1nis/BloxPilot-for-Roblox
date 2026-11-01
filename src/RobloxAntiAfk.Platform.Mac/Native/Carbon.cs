@@ -23,6 +23,8 @@ internal static unsafe partial class Carbon
     public const uint HotKeyPressedKind = 5;
     public const uint ControlModifier = 4096;
     public const uint OptionModifier = 2048;
+    public const uint ShiftModifier = 512;
+    public const uint CommandModifier = 256;
     public const uint DirectObjectParameter = 0x2D2D2D2D; // '----'
     public const uint HotKeyIdType = 0x686B6964; // 'hkid'
 

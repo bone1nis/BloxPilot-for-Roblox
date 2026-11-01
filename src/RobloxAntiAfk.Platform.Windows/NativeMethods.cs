@@ -139,12 +139,11 @@ internal static unsafe partial class NativeMethods
     public const nint MessageRightButtonDown = 0x0204;
     public const nint MessageRightButtonUp = 0x0205;
     public const uint MessageHotkey = 0x0312;
+    public const uint ModifierAlt = 0x0001;
     public const uint ModifierControl = 0x0002;
     public const uint ModifierShift = 0x0004;
+    public const uint ModifierWin = 0x0008;
     public const uint ModifierNoRepeat = 0x4000;
-    public const uint VirtualKeyF8 = 0x77;
-    public const uint VirtualKeyX = 0x58;
-    public const uint VirtualKeyEscape = 0x1B;
     public const int ExtendedStyleIndex = -20;
     public const nint StyleTransparent = 0x00000020;
     public const nint StyleToolWindow = 0x00000080;

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:RobloxAntiAfk.App.ViewModels"
+             xmlns:views="using:RobloxAntiAfk.App.Views"
              x:Class="RobloxAntiAfk.App.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <UserControl.Resources>
@@ -175,6 +176,7 @@
       <StackPanel>
         <TextBlock Classes="strong" Text="Горячая клавиша" />
         <TextBlock Classes="muted small" Text="{Binding HotkeyHint}" />
+        <views:HotkeyEditor DataContext="{Binding HotkeyEditor}" />
       </StackPanel>
     </Border>
 

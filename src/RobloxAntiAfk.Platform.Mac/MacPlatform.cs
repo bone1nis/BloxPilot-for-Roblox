@@ -19,15 +19,15 @@ public static class MacPlatform
             new MacInputPermission(),
             new MacMouseCapture(),
             new MacInputRecorder(),
-            new MacHotkey(1, MacHotkey.KeyCodeA, "Control+Option+A"),
+            new MacHotkey(1, new Hotkey("A", Control: true, Alt: true)),
             new MacAutoStart(),
             new NoAudioControl(),
             new MacLauncher(),
             new RobloxLogWatcher(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Logs", "Roblox"),
                 new SystemClock()),
-            new MacHotkey(2, MacHotkey.KeyCodeT, "Control+Option+T"),
-            new MacHotkey(3, MacHotkey.KeyCodeEscape, "Esc", modifiers: 0),
+            new MacHotkey(2, new Hotkey("T", Control: true, Alt: true)),
+            new MacHotkey(3, new Hotkey(Hotkey.EscapeKey)),
             new MacScreenTextReader(),
             new MacOverlaySupport(),
             // Если Roblox на весь экран, macOS показывает анимацию перехода.

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using RobloxAntiAfk.Core.Abstractions;
+using RobloxAntiAfk.Core.Domain;
 using RobloxAntiAfk.Core.Services;
 
 namespace RobloxAntiAfk.Platform.Windows;
@@ -19,15 +20,15 @@ public static class WindowsPlatform
             new NoPermissionRequired(),
             new WindowsMouseCapture(),
             new WindowsInputRecorder(),
-            new WindowsHotkey(1, NativeMethods.VirtualKeyF8, "Ctrl+Shift+F8"),
+            new WindowsHotkey(1, new Hotkey("F8", Control: true, Shift: true)),
             new WindowsAutoStart(),
             new WindowsAudio(),
             new WindowsLauncher(),
             new RobloxLogWatcher(
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "logs"),
                 new SystemClock()),
-            new WindowsHotkey(2, NativeMethods.VirtualKeyX, "Ctrl+Shift+X"),
-            new WindowsHotkey(3, NativeMethods.VirtualKeyEscape, "Esc", modifiers: 0),
+            new WindowsHotkey(2, new Hotkey("X", Control: true, Shift: true)),
+            new WindowsHotkey(3, new Hotkey(Hotkey.EscapeKey)),
             new WindowsScreenTextReader(recognizer),
             new WindowsOverlaySupport(),
             WindowSettleDelay: TimeSpan.FromMilliseconds(500));

@@ -97,7 +97,10 @@ public interface IGlobalHotkey
 {
     string Label { get; }
 
-    /// <summary>Обработчик вызывается в потоке интерфейса. Возвращает false, если сочетание уже занято.</summary>
+    /// <summary>Выбирает своё сочетание, а null возвращает стандартное. Действует со следующего Start.</summary>
+    void Bind(Hotkey? custom);
+
+    /// <summary>Обработчик вызывается в потоке интерфейса. Возвращает false, если сочетание занять не удалось.</summary>
     bool Start(Action onPressed);
 
     void Stop();

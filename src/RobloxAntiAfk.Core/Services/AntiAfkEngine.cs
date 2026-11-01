@@ -33,6 +33,8 @@ public sealed class AntiAfkEngine
     private bool _isActing;
     private bool _isPicking;
     private bool _isHotkeyActive;
+    private bool _isHotkeyStarted;
+    private Hotkey? _boundHotkey;
     private DateTimeOffset _pickDeadline;
     private IReadOnlyList<WindowHandle> _pickWindows = [];
     private WindowHandle _beforePick;
@@ -109,7 +111,7 @@ public sealed class AntiAfkEngine
     {
         _platform.Disconnects.Arm();
         ApplySleepMode();
-        _isHotkeyActive = _platform.Hotkey.Start(HandleHotkey);
+        SyncHotkey();
         if (_settings.RunOnOpen)
         {
             ToggleRunning();
@@ -225,8 +227,41 @@ public sealed class AntiAfkEngine
         _settings = updated;
         _settingsStore.Save(_settings);
         ApplySleepMode();
+        SyncHotkey();
         SyncAudio(_platform.Windows.FindRobloxWindows(), _clock.Now, force: true);
         Changed?.Invoke();
+    }
+
+    public bool AreHotkeysPaused { get; private set; }
+
+    public bool IsActing => _isActing;
+
+    /// <summary>Пока записывается новое сочетание, старые не должны перехватывать нажатия.</summary>
+    public void PauseHotkeys(bool isPaused)
+    {
+        if (AreHotkeysPaused != isPaused)
+        {
+            AreHotkeysPaused = isPaused;
+            SyncHotkey();
+            Changed?.Invoke();
+        }
+    }
+
+    private void SyncHotkey()
+    {
+        if (_isHotkeyStarted && (AreHotkeysPaused || _settings.ToggleHotkey != _boundHotkey))
+        {
+            _platform.Hotkey.Stop();
+            _isHotkeyStarted = false;
+        }
+
+        if (!_isHotkeyStarted && !AreHotkeysPaused)
+        {
+            _boundHotkey = _settings.ToggleHotkey;
+            _platform.Hotkey.Bind(_boundHotkey);
+            _isHotkeyActive = _platform.Hotkey.Start(HandleHotkey);
+            _isHotkeyStarted = true;
+        }
     }
 
     public void ResetSettings() => UpdateSettings(settings => settings.ToDefaultsKeepingUserData());
@@ -349,6 +384,12 @@ public sealed class AntiAfkEngine
     /// <summary>Во время записи сочетание останавливает запись: кнопка в приложении может быть за окном игры.</summary>
     private void HandleHotkey()
     {
+        // Одиночной клавишей может оказаться та, что приложение само нажимает в игре.
+        if (_isActing && _settings.ToggleHotkey is { HasModifiers: false })
+        {
+            return;
+        }
+
         if (IsRecording)
         {
             StopMacroRecording();

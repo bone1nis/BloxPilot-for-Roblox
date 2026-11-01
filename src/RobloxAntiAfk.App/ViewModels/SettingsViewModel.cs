@@ -57,10 +57,17 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _telegramHint = "";
     [ObservableProperty] private bool _canConnectTelegram = true;
 
-    public SettingsViewModel(AntiAfkEngine engine, TelegramNotifier telegram)
+    public HotkeyEditorViewModel HotkeyEditor { get; }
+
+    public SettingsViewModel(AntiAfkEngine engine, TelegramNotifier telegram, Func<string> translationHotkeyLabel)
     {
         _engine = engine;
         _telegram = telegram;
+        HotkeyEditor = new HotkeyEditorViewModel(
+            engine,
+            translationHotkeyLabel,
+            settings => settings.ToggleHotkey,
+            (settings, hotkey) => settings with { ToggleHotkey = hotkey });
         Actions = Enum.GetValues<AfkAction>()
             .Select(action => new ChoiceViewModel<AfkAction>(
                 action,
@@ -155,7 +162,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         RunOnOpen = settings.RunOnOpen;
         HotkeyHint = snapshot.IsHotkeyActive
             ? $"{snapshot.HotkeyLabel} запускает и останавливает приложение из любого окна, а во время записи останавливает запись."
-            : $"Сочетание {snapshot.HotkeyLabel} занято другой программой, поэтому сейчас не работает.";
+            : $"Сочетание {snapshot.HotkeyLabel} занять не удалось: его держит другая программа или система. Поставь другое.";
+        HotkeyEditor.Refresh();
 
         ReconnectEnabled = settings.ReconnectEnabled;
         GameLink = settings.GameLink;

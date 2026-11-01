@@ -23,9 +23,9 @@ public sealed partial class MainViewModel : ObservableObject
         _engine = engine;
         IsMac = isMac ?? OperatingSystem.IsMacOS();
         Status = new StatusViewModel(engine);
-        Settings = new SettingsViewModel(engine, telegram);
+        Settings = new SettingsViewModel(engine, telegram, () => translator.HotkeyLabel);
         Statistics = new StatisticsViewModel(engine);
-        Rules = new RulesViewModel(IsMac, translator.Snapshot.HotkeyLabel);
+        Rules = new RulesViewModel(IsMac, () => translator.HotkeyLabel);
         Translation = new TranslationViewModel(engine, translator);
 
         engine.Changed += Refresh;
