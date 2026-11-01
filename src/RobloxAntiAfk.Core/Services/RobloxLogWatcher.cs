@@ -63,11 +63,19 @@ public sealed partial class RobloxLogWatcher(string folder, IClock clock) : IDis
             _disconnectedAt = null;
             _ignoreUntil = now + AfterJoinWindow;
         }
-        else if (IsDisconnectLine(line) && now >= _ignoreUntil)
+        else if (IsConnectionFailureLine(line) || (IsDisconnectLine(line) && now >= _ignoreUntil))
         {
             _disconnectedAt ??= now;
         }
     }
+
+    /// <summary>
+    /// Клиент показал ошибку подключения, например 279 или 277. Такое бывает и сразу после перехода между серверами:
+    /// при нём клиент сам пишет код 285, поэтому отключения рядом с переходом не считаем, а эту запись считаем всегда.
+    /// </summary>
+    internal static bool IsConnectionFailureLine(string line) =>
+        line.Contains("Session Transition FSM: Error Occurred", StringComparison.Ordinal)
+        || line.Contains("Failed to connect to server at", StringComparison.Ordinal);
 
     /// <summary>Клиент начал переход на другой сервер. Вид записи зависит от версии клиента, поэтому ищем обе формы.</summary>
     internal static bool IsTeleportLine(string line) =>
@@ -79,7 +87,7 @@ public sealed partial class RobloxLogWatcher(string folder, IClock clock) : IDis
 
     internal static bool IsDisconnectLine(string line)
     {
-        // Точные слова при обрыве интернета не подтверждены, поэтому ищем обе формы, но только в сетевых строках клиента.
+        // При обрыве связи клиент пишет и «Connection lost», и «Lost connection to», поэтому ищем обе формы, но только в сетевых строках.
         if (line.Contains("FLog::Network", StringComparison.Ordinal)
             && (line.Contains("lost connection", StringComparison.OrdinalIgnoreCase) || line.Contains("connection lost", StringComparison.OrdinalIgnoreCase)))
         {

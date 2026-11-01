@@ -12,6 +12,8 @@ public sealed class RobloxLogWatcherTests : IDisposable
     private const string Teleport = "2026-01-01T12:00:00Z,1.0,abc,6 [FLog::UgcExperienceController] UgcExperienceController: doTeleport: joinScriptUrl = x";
     private const string OlderTeleport = "2026-01-01T12:00:00Z,1.0,abc,6 [FLog::SingleSurfaceApp] initiateTeleport";
     private const string Joining = "2026-01-01T12:00:00Z,1.0,abc,6 [FLog::Output] ! Joining game 'x' place 1 at 1.1.1.1";
+    private const string NoResponse = "2026-01-01T12:00:00Z,1.0,abc,6,Error [DFLog::NetworkClient] Failed to connect to server at 1.1.1.1|5000, no response.";
+    private const string SessionError = "2026-01-01T12:00:00Z,1.0,abc,6 [FLog::Output] Session Transition FSM: Error Occurred.";
     private static readonly TimeSpan ConfirmDelay = TimeSpan.FromSeconds(30);
 
     private readonly string _folder = Directory.CreateTempSubdirectory("roblox-log-tests").FullName;
@@ -163,6 +165,50 @@ public sealed class RobloxLogWatcherTests : IDisposable
         Append(Disconnect);
 
         Assert.True(PollAfterDelay(watcher));
+    }
+
+    /// <summary>Порядок записей как в настоящем журнале при ошибке 279: переход, код 285, заход, через 20 секунд отказ.</summary>
+    [Theory]
+    [InlineData(NoResponse)]
+    [InlineData(SessionError)]
+    public void Failing_to_reach_the_new_server_right_after_a_teleport_is_reported(string failureLine)
+    {
+        var watcher = ArmedWatcher();
+        Append(Teleport);
+        Append(PlayerLeft);
+        Append(Joining);
+        Assert.False(watcher.Poll());
+        _clock.Advance(TimeSpan.FromSeconds(20));
+
+        Append(failureLine);
+
+        Assert.True(PollAfterDelay(watcher));
+    }
+
+    [Fact]
+    public void Connecting_after_retry_cancels_the_failure()
+    {
+        var watcher = ArmedWatcher();
+        Append(NoResponse);
+        Assert.False(watcher.Poll());
+        _clock.Advance(TimeSpan.FromSeconds(10));
+
+        Append(Joining);
+
+        Assert.False(PollAfterDelay(watcher));
+    }
+
+    [Fact]
+    public void Failure_is_reported_once_even_with_both_lines()
+    {
+        var watcher = ArmedWatcher();
+
+        Append(NoResponse);
+        Append(SessionError);
+
+        Assert.True(PollAfterDelay(watcher));
+        _clock.Advance(ConfirmDelay);
+        Assert.False(watcher.Poll());
     }
 
     [Fact]
