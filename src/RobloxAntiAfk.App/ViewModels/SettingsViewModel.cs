@@ -234,7 +234,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         else
         {
             _engine.UpdateSettings(settings => settings with { TelegramChatId = chatId });
-            var isSent = await _telegram.SendAsync(token, chatId, "Roblox AntiAFK подключён. Сюда придёт сообщение, если Roblox отключится или закроется.");
+            var isSent = await _telegram.SendAsync(token, chatId, "BloxPilot подключён. Сюда придёт сообщение, если Roblox отключится или закроется.");
             ShowTelegramResult(isSent ? "Готово: проверочное сообщение отправлено." : "Чат найден, но сообщение не отправилось. Проверь интернет и нажми ещё раз.");
         }
 

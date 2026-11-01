@@ -130,7 +130,7 @@ public static class Texts
         TranslationStatus.RobloxMissing => "Сначала запусти Roblox.",
         TranslationStatus.RobloxNotInFront => "Не удалось вывести Roblox вперёд. Открой его и нажми ещё раз.",
         TranslationStatus.InputPermissionMissing => "Сначала выдай разрешение «Универсальный доступ».",
-        TranslationStatus.ScreenPermissionMissing => "Нужно разрешение «Запись экрана»: Системные настройки → Конфиденциальность и безопасность → Запись экрана. Включи Roblox AntiAFK и открой приложение заново.",
+        TranslationStatus.ScreenPermissionMissing => "Нужно разрешение «Запись экрана»: Системные настройки → Конфиденциальность и безопасность → Запись экрана. Включи BloxPilot и открой приложение заново.",
         TranslationStatus.EmptyCapture => "Снимок окна получился пустым. Переключи Roblox в оконный режим и попробуй ещё раз.",
         TranslationStatus.SelectionFailed => "Не удалось начать выбор области.",
         _ => "Не удалось прочитать текст.",

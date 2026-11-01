@@ -22,6 +22,6 @@ internal static class PlatformFactory
             return MacPlatform.Create();
         }
 
-        throw new PlatformNotSupportedException("Roblox AntiAFK работает только на Windows и macOS.");
+        throw new PlatformNotSupportedException("BloxPilot работает только на Windows и macOS.");
     }
 }

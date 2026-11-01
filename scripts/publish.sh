@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 project=src/RobloxAntiAfk.App/RobloxAntiAfk.App.csproj
-app_name="Roblox AntiAFK"
+app_name="BloxPilot"
 signing_dir="$HOME/Library/Application Support/RobloxAntiAFK-Signing"
 signing_keychain="$signing_dir/signing.keychain-db"
 
@@ -36,7 +36,7 @@ publish_mac() {
   cp packaging/macos/Info.plist "$bundle/Contents/Info.plist"
   cp packaging/macos/icon.icns "$bundle/Contents/Resources/icon.icns"
   codesign --force --deep --timestamp=none --keychain "$signing_keychain" --sign "$signing_identity" "$bundle"
-  ditto -c -k --keepParent "$bundle" "dist/Roblox-AntiAFK-$folder.zip"
+  ditto -c -k --keepParent "$bundle" "dist/BloxPilot-$folder.zip"
 }
 
 # codesign ищет ключ только в связках из списка пользователя, поэтому она попадает туда на время подписи.

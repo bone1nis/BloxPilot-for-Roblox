@@ -2,6 +2,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <AssemblyName>RobloxAntiAFK</AssemblyName>
+    <Product>BloxPilot</Product>
+    <AssemblyTitle>BloxPilot</AssemblyTitle>
     <RootNamespace>RobloxAntiAfk.App</RootNamespace>
     <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>

@@ -112,6 +112,13 @@ public sealed class AntiAfkEngine
         _platform.Disconnects.Arm();
         ApplySleepMode();
         SyncHotkey();
+
+        // Приложение могли переместить или переименовать при обновлении, а автозапуск хранит полный путь.
+        if (_settings.StartWithSystem)
+        {
+            _platform.AutoStart.Apply(true);
+        }
+
         if (_settings.RunOnOpen)
         {
             ToggleRunning();

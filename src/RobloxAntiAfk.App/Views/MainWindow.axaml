@@ -4,7 +4,7 @@
         xmlns:views="using:RobloxAntiAfk.App.Views"
         x:Class="RobloxAntiAfk.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="Roblox AntiAFK"
+        Title="BloxPilot"
         Icon="/Assets/icon.png"
         Width="900" Height="620"
         CanResize="False"

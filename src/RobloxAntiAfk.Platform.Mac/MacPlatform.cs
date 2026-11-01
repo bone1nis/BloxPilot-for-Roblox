@@ -104,7 +104,7 @@ public static class MacPlatform
                 }
 
                 var options = mode == SleepMode.KeepAwake ? UserInitiated | IdleDisplaySleepDisabled : UserInitiatedAllowingSleep;
-                var reason = CoreFoundation.CreateString("Roblox AntiAFK");
+                var reason = CoreFoundation.CreateString("BloxPilot");
                 _activity = ObjC.Send(ObjC.BeginActivity(processInfo, options, reason), "retain");
                 CoreFoundation.CFRelease(reason);
             }

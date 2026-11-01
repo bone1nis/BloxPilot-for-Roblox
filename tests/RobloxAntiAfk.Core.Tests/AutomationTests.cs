@@ -120,6 +120,18 @@ public class AutomationTests
         Assert.False(engine.Snapshot.IsHotkeyActive);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Start_refreshes_the_path_only_when_autostart_is_enabled(bool isEnabled)
+    {
+        var engine = CreateEngine(new AppSettings { StartWithSystem = isEnabled });
+
+        engine.Start();
+
+        Assert.Equal(isEnabled ? [true] : [], _world.AutoStart.Applied);
+    }
+
     [Fact]
     public void Run_on_open_starts_immediately_only_when_enabled()
     {

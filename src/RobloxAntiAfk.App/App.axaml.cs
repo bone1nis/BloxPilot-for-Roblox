@@ -124,7 +124,7 @@ public sealed class App : Application
         var tray = new TrayIcon
         {
             Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://RobloxAntiAFK/Assets/icon.png"))),
-            ToolTipText = "Roblox AntiAFK",
+            ToolTipText = "BloxPilot",
             Menu = new NativeMenu { open, toggle, new NativeMenuItemSeparator(), quit },
         };
         tray.Clicked += (_, _) => ShowWindow(window);
@@ -144,7 +144,7 @@ public sealed class App : Application
         var settings = engine.Snapshot.Settings;
         if (Texts.IsWorthNotifying(entry.Code) && settings.TelegramChatId.Length > 0)
         {
-            outbox.Add($"Roblox AntiAFK, {entry.Time.ToLocalTime():HH:mm}: {Texts.Activity(entry)}");
+            outbox.Add($"BloxPilot, {entry.Time.ToLocalTime():HH:mm}: {Texts.Activity(entry)}");
             _ = outbox.SendPendingAsync(settings.TelegramToken, settings.TelegramChatId);
         }
     }
